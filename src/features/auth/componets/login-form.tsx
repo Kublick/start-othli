@@ -28,7 +28,7 @@ const formSchema = z.object({
 type formType = z.infer<typeof formSchema>;
 
 const LoginForm = () => {
-  const { login, loginWithGoogle } = useAuthStore();
+  const { loginWithGoogle } = useAuthStore();
 
   const handleGoogleLogin = useCallback(async () => {
     await loginWithGoogle();
@@ -48,13 +48,17 @@ const LoginForm = () => {
     const { email, password } = values;
 
     try {
-      const status = await signIn.email({
-        email,
-        password,
-      });
-
-      console.log(status);
-      // navigate({ to: "/" });
+      await signIn.email(
+        {
+          email,
+          password,
+        },
+        {
+          onSuccess: () => {
+            navigate({ to: "/config/categorias" });
+          },
+        },
+      );
     } catch (err) {
       console.log(err);
       toast.error("Error en las credenciales");
