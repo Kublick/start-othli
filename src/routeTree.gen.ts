@@ -12,11 +12,12 @@ import { createServerRootRoute } from '@tanstack/react-start/server'
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DemoTableRouteImport } from './routes/demo.table'
+import { Route as DashboardOverviewRouteImport } from './routes/dashboard/overview'
 import { Route as ConfigCategoriasRouteImport } from './routes/config/categorias'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotRouteImport } from './routes/auth/forgot'
+import { Route as DashboardFinanzasTransaccionesRouteImport } from './routes/dashboard/finanzas/transacciones'
 import { ServerRoute as ApiSplatServerRouteImport } from './routes/api/$'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -26,9 +27,9 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoTableRoute = DemoTableRouteImport.update({
-  id: '/demo/table',
-  path: '/demo/table',
+const DashboardOverviewRoute = DashboardOverviewRouteImport.update({
+  id: '/dashboard/overview',
+  path: '/dashboard/overview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfigCategoriasRoute = ConfigCategoriasRouteImport.update({
@@ -51,6 +52,12 @@ const AuthForgotRoute = AuthForgotRouteImport.update({
   path: '/auth/forgot',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardFinanzasTransaccionesRoute =
+  DashboardFinanzasTransaccionesRouteImport.update({
+    id: '/dashboard/finanzas/transacciones',
+    path: '/dashboard/finanzas/transacciones',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSplatServerRoute = ApiSplatServerRouteImport.update({
   id: '/api/$',
   path: '/api/$',
@@ -63,7 +70,8 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
   '/config/categorias': typeof ConfigCategoriasRoute
-  '/demo/table': typeof DemoTableRoute
+  '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -71,7 +79,8 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
   '/config/categorias': typeof ConfigCategoriasRoute
-  '/demo/table': typeof DemoTableRoute
+  '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,7 +89,8 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
   '/config/categorias': typeof ConfigCategoriasRoute
-  '/demo/table': typeof DemoTableRoute
+  '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,7 +100,8 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/signup'
     | '/config/categorias'
-    | '/demo/table'
+    | '/dashboard/overview'
+    | '/dashboard/finanzas/transacciones'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -98,7 +109,8 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/signup'
     | '/config/categorias'
-    | '/demo/table'
+    | '/dashboard/overview'
+    | '/dashboard/finanzas/transacciones'
   id:
     | '__root__'
     | '/'
@@ -106,7 +118,8 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/signup'
     | '/config/categorias'
-    | '/demo/table'
+    | '/dashboard/overview'
+    | '/dashboard/finanzas/transacciones'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -115,7 +128,8 @@ export interface RootRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
   AuthSignupRoute: typeof AuthSignupRoute
   ConfigCategoriasRoute: typeof ConfigCategoriasRoute
-  DemoTableRoute: typeof DemoTableRoute
+  DashboardOverviewRoute: typeof DashboardOverviewRoute
+  DashboardFinanzasTransaccionesRoute: typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileServerRoutesByFullPath {
   '/api/$': typeof ApiSplatServerRoute
@@ -148,11 +162,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/table': {
-      id: '/demo/table'
-      path: '/demo/table'
-      fullPath: '/demo/table'
-      preLoaderRoute: typeof DemoTableRouteImport
+    '/dashboard/overview': {
+      id: '/dashboard/overview'
+      path: '/dashboard/overview'
+      fullPath: '/dashboard/overview'
+      preLoaderRoute: typeof DashboardOverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/config/categorias': {
@@ -183,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/finanzas/transacciones': {
+      id: '/dashboard/finanzas/transacciones'
+      path: '/dashboard/finanzas/transacciones'
+      fullPath: '/dashboard/finanzas/transacciones'
+      preLoaderRoute: typeof DashboardFinanzasTransaccionesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 declare module '@tanstack/react-start/server' {
@@ -203,7 +224,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   AuthSignupRoute: AuthSignupRoute,
   ConfigCategoriasRoute: ConfigCategoriasRoute,
-  DemoTableRoute: DemoTableRoute,
+  DashboardOverviewRoute: DashboardOverviewRoute,
+  DashboardFinanzasTransaccionesRoute: DashboardFinanzasTransaccionesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

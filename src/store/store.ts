@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { authClient } from "@/lib/auth-client";
@@ -49,23 +50,35 @@ export const useAuthStore = create<
         login: async (email: string, password: string) => {
           set({ isLoading: true, error: null }, undefined, "login");
           try {
-            // This would typically call your auth API
-            // For now, we'll simulate a login
-            const response = await fetch("/api/auth/login", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
+            const { data } = await authClient.signIn.email(
+              {
+                email,
+                password,
+                callbackURL: "/dashboard/overview",
               },
-              body: JSON.stringify({ email, password }),
-            });
+              {
+                onSuccess: () => {
+                  toast.success("Inicio de sesión exitoso");
+                },
+                onError: (ctx) => {
+                  console.log(ctx.error.status);
+                  if (ctx.error.status === 401) {
+                    toast.error("Error en las credenciales");
+                  }
+                  if (ctx.error.status === 403) {
+                    toast.error("La cuenta no esta verificada");
+                  }
+                  return;
+                },
+              },
+            );
 
-            if (!response.ok) {
-              throw new Error("Login failed");
-            }
-
-            const user = await response.json();
             set(
-              { user, isAuthenticated: true, isLoading: false },
+              {
+                user: data?.user as User,
+                isAuthenticated: true,
+                isLoading: false,
+              },
               undefined,
               "login-success",
             );
@@ -81,6 +94,8 @@ export const useAuthStore = create<
               undefined,
               "Auth-failed",
             );
+            console.log(error);
+            toast.error("Ocurrio un error al iniciar sesión");
             throw error;
           }
         },
@@ -110,7 +125,9 @@ export const useAuthStore = create<
         logout: async () => {
           set({ isLoading: true, error: null }, undefined, "logout");
           try {
-            await fetch("/api/auth/logout", { method: "POST" });
+            await authClient.signOut();
+
+            window.location.href = "/auth/login";
             set(
               { user: null, isAuthenticated: false, isLoading: false },
               undefined,

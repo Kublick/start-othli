@@ -1,8 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +13,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { signIn } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/store";
 
@@ -28,13 +26,11 @@ const formSchema = z.object({
 type formType = z.infer<typeof formSchema>;
 
 const LoginForm = () => {
-  const { loginWithGoogle } = useAuthStore();
+  const { login, loginWithGoogle } = useAuthStore();
 
   const handleGoogleLogin = useCallback(async () => {
     await loginWithGoogle();
   }, [loginWithGoogle]);
-
-  const navigate = useNavigate();
 
   const form = useForm<formType>({
     resolver: zodResolver(formSchema),
@@ -47,22 +43,7 @@ const LoginForm = () => {
   const onSubmit = async (values: formType) => {
     const { email, password } = values;
 
-    try {
-      await signIn.email(
-        {
-          email,
-          password,
-        },
-        {
-          onSuccess: () => {
-            navigate({ to: "/config/categorias" });
-          },
-        },
-      );
-    } catch (err) {
-      console.log(err);
-      toast.error("Error en las credenciales");
-    }
+    login(email, password);
   };
 
   return (

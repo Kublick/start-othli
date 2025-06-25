@@ -1,8 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+
 import { GalleryVerticalEnd } from "lucide-react";
 import LoginForm from "@/features/auth/componets/login-form";
+import { getUserID } from "@/lib/auth-server-func";
 
 export const Route = createFileRoute("/auth/login")({
+  beforeLoad: async () => {
+    const userID = await getUserID();
+    return { userID };
+  },
+  loader: async ({ context }) => {
+    if (context.userID) {
+      throw redirect({ to: "/dashboard/overview" });
+    }
+  },
   component: RouteComponent,
 });
 

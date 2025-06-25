@@ -8,6 +8,7 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { Toaster } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import TanStackQueryLayout from "../integrations/tanstack-query/layout.tsx";
@@ -82,6 +83,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       <Outlet />
       <TanStackRouterDevtools />
       <TanStackQueryLayout />
+      <Toaster />
     </RootDocument>
   ),
   errorComponent: ErrorComponent,

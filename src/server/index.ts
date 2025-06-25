@@ -8,7 +8,6 @@ const app = new Hono<{ Variables: Context }>();
 app.use("*", async (c, next) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
-  console.log("🚀 ~ app.use ~ session:", session);
   if (!session) {
     c.set("user", null);
     c.set("session", null);
