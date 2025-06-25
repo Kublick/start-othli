@@ -14,7 +14,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardOverviewRouteImport } from './routes/dashboard/overview'
 import { Route as ConfigCategoriasRouteImport } from './routes/config/categorias'
+import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
+import { Route as AuthResetRouteImport } from './routes/auth/reset'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotRouteImport } from './routes/auth/forgot'
 import { Route as DashboardFinanzasTransaccionesRouteImport } from './routes/dashboard/finanzas/transacciones'
@@ -37,9 +39,19 @@ const ConfigCategoriasRoute = ConfigCategoriasRouteImport.update({
   path: '/config/categorias',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthVerifyRoute = AuthVerifyRouteImport.update({
+  id: '/auth/verify',
+  path: '/auth/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthSignupRoute = AuthSignupRouteImport.update({
   id: '/auth/signup',
   path: '/auth/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthResetRoute = AuthResetRouteImport.update({
+  id: '/auth/reset',
+  path: '/auth/reset',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthLoginRoute = AuthLoginRouteImport.update({
@@ -68,7 +80,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/login': typeof AuthLoginRoute
+  '/auth/reset': typeof AuthResetRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/config/categorias': typeof ConfigCategoriasRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
@@ -77,7 +91,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/login': typeof AuthLoginRoute
+  '/auth/reset': typeof AuthResetRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/config/categorias': typeof ConfigCategoriasRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
@@ -87,7 +103,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth/forgot': typeof AuthForgotRoute
   '/auth/login': typeof AuthLoginRoute
+  '/auth/reset': typeof AuthResetRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/config/categorias': typeof ConfigCategoriasRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
@@ -98,7 +116,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth/forgot'
     | '/auth/login'
+    | '/auth/reset'
     | '/auth/signup'
+    | '/auth/verify'
     | '/config/categorias'
     | '/dashboard/overview'
     | '/dashboard/finanzas/transacciones'
@@ -107,7 +127,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth/forgot'
     | '/auth/login'
+    | '/auth/reset'
     | '/auth/signup'
+    | '/auth/verify'
     | '/config/categorias'
     | '/dashboard/overview'
     | '/dashboard/finanzas/transacciones'
@@ -116,7 +138,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth/forgot'
     | '/auth/login'
+    | '/auth/reset'
     | '/auth/signup'
+    | '/auth/verify'
     | '/config/categorias'
     | '/dashboard/overview'
     | '/dashboard/finanzas/transacciones'
@@ -126,7 +150,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthForgotRoute: typeof AuthForgotRoute
   AuthLoginRoute: typeof AuthLoginRoute
+  AuthResetRoute: typeof AuthResetRoute
   AuthSignupRoute: typeof AuthSignupRoute
+  AuthVerifyRoute: typeof AuthVerifyRoute
   ConfigCategoriasRoute: typeof ConfigCategoriasRoute
   DashboardOverviewRoute: typeof DashboardOverviewRoute
   DashboardFinanzasTransaccionesRoute: typeof DashboardFinanzasTransaccionesRoute
@@ -176,11 +202,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfigCategoriasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/verify': {
+      id: '/auth/verify'
+      path: '/auth/verify'
+      fullPath: '/auth/verify'
+      preLoaderRoute: typeof AuthVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/signup': {
       id: '/auth/signup'
       path: '/auth/signup'
       fullPath: '/auth/signup'
       preLoaderRoute: typeof AuthSignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/reset': {
+      id: '/auth/reset'
+      path: '/auth/reset'
+      fullPath: '/auth/reset'
+      preLoaderRoute: typeof AuthResetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/login': {
@@ -222,7 +262,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthForgotRoute: AuthForgotRoute,
   AuthLoginRoute: AuthLoginRoute,
+  AuthResetRoute: AuthResetRoute,
   AuthSignupRoute: AuthSignupRoute,
+  AuthVerifyRoute: AuthVerifyRoute,
   ConfigCategoriasRoute: ConfigCategoriasRoute,
   DashboardOverviewRoute: DashboardOverviewRoute,
   DashboardFinanzasTransaccionesRoute: DashboardFinanzasTransaccionesRoute,
