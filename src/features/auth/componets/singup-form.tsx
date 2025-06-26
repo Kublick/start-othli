@@ -54,6 +54,12 @@ const SignUp = ({
         name: values.name,
       },
       {
+        onSuccess: () => {
+          toast.success(
+            "¡Cuenta creada exitosamente! Revisa tu email para verificar tu cuenta.",
+          );
+          navigate({ to: "/auth/login" });
+        },
         onError: (ctx) => {
           if (ctx.error.status === 422) {
             toast.error("La cuenta ya existe");
@@ -65,9 +71,6 @@ const SignUp = ({
 
     if (error) {
       toast.error(error.message);
-    } else {
-      toast.success("Check your email for verification");
-      navigate({ to: "/auth/login" });
     }
   }
 

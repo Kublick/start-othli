@@ -1,10 +1,13 @@
 import { betterAuth, type User } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { openAPI } from "better-auth/plugins";
 import { reactStartCookies } from "better-auth/react-start";
 import { Resend } from "resend";
 import { toast } from "sonner";
 import { db } from "@/db";
+import * as schema from "@/db/schema";
 import { clientEnv, env } from "@/env";
+import EmailConfirmation from "./email/ConfirmEmail";
 import PasswordReset from "./email/PasswordReset";
 
 const resend = new Resend(env.RESEND_API_KEY);
@@ -12,6 +15,9 @@ const resend = new Resend(env.RESEND_API_KEY);
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
+    schema: {
+      ...schema,
+    },
   }),
   emailAndPassword: {
     enabled: true,
@@ -31,6 +37,9 @@ export const auth = betterAuth({
         );
       }
     },
+    requireEmailVerification: true,
+  },
+  emailVerification: {
     sendVerificationEmail: async ({
       user,
       token,
@@ -38,6 +47,7 @@ export const auth = betterAuth({
       user: User;
       token: string;
     }) => {
+      console.log("sendVerificationEmail", user, token);
       const confirmationUrl = `${clientEnv.VITE_BETTER_AUTH_URL}/auth/verify?token=${token}`;
       const { error } = await resend.emails.send({
         from: "info@aumentapacientes.com",
@@ -53,7 +63,7 @@ export const auth = betterAuth({
         );
       }
     },
-    requireEmailVerification: true,
   },
-  plugins: [reactStartCookies()],
+  trustedOrigins: [clientEnv.VITE_BETTER_AUTH_URL],
+  plugins: [openAPI(), reactStartCookies()],
 });

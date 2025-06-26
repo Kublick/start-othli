@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { auth } from "./auth";
 import type { Context } from "./context";
 import { categoriesRouter } from "./routes/categoriesRouter";
+import financialAccountRouter from "./routes/financialAccountRouter";
+import { seedRouter } from "./routes/seed";
+import { setupRouter } from "./routes/setupRouter";
 
 const app = new Hono<{ Variables: Context }>();
 
@@ -14,15 +17,7 @@ app.use("*", async (c, next) => {
     return next();
   }
 
-  c.set("user", {
-    id: "1",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    emailVerified: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
-
+  c.set("user", session.user);
   c.set("session", session.session);
   return next();
 });
@@ -31,8 +26,11 @@ app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 
 const routes = app
   .get("/health", async (c) => c.text("OK"))
+  .route("/api/seed", seedRouter)
   .basePath("/api")
-  .route("/categories", categoriesRouter);
+  .route("/categories", categoriesRouter)
+  .route("/financial-accounts", financialAccountRouter)
+  .route("/setup", setupRouter);
 
 export type AppType = typeof routes;
 

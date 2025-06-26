@@ -120,7 +120,7 @@ export default function DashboardLayout({
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link to="/dashboard/overview">
+                        <Link to="/dashboard/finanzas/presupuestos">
                           <Target className="h-4 w-4" />
                           <span>Presupuesto</span>
                         </Link>

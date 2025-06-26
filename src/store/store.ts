@@ -57,8 +57,9 @@ export const useAuthStore = create<
                 callbackURL: "/dashboard/overview",
               },
               {
-                onSuccess: () => {
+                onSuccess: async () => {
                   toast.success("Inicio de sesión exitoso");
+                  // Account creation is now handled by the setup wizard
                 },
                 onError: (ctx) => {
                   console.log(ctx.error.status);
@@ -165,34 +166,44 @@ export const useAuthStore = create<
                 undefined,
                 "checkAuth-authenticated",
               );
+              // Account creation is now handled by the setup wizard
             } else {
               set(
-                { user: null, isAuthenticated: false, isLoading: false },
+                {
+                  user: null,
+                  isAuthenticated: false,
+                  isLoading: false,
+                },
                 undefined,
-                "checkAuth-unauthenticated",
+                "checkAuth-not-authenticated",
               );
             }
           } catch (error) {
             set(
               {
-                user: null,
-                isAuthenticated: false,
-                isLoading: false,
                 error:
                   error instanceof Error
                     ? error.message
-                    : "Failed to verify authentication",
+                    : "Authentication check failed",
+                isLoading: false,
               },
               undefined,
-              "checkAuth",
+              "checkAuth-failed",
             );
+            console.error("Error checking authentication:", error);
           }
         },
       }),
       {
         name: "auth-storage",
+        partialize: (state: AuthState & AuthActions) => ({
+          user: state.user,
+          isAuthenticated: state.isAuthenticated,
+        }),
       },
     ),
-    { name: "auth-store" },
+    {
+      name: "auth-devtools",
+    },
   ),
 );

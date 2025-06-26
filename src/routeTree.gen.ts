@@ -20,6 +20,7 @@ import { Route as AuthResetRouteImport } from './routes/auth/reset'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotRouteImport } from './routes/auth/forgot'
 import { Route as DashboardFinanzasTransaccionesRouteImport } from './routes/dashboard/finanzas/transacciones'
+import { Route as DashboardFinanzasPresupuestosRouteImport } from './routes/dashboard/finanzas/presupuestos'
 import { ServerRoute as ApiSplatServerRouteImport } from './routes/api/$'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -70,6 +71,12 @@ const DashboardFinanzasTransaccionesRoute =
     path: '/dashboard/finanzas/transacciones',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DashboardFinanzasPresupuestosRoute =
+  DashboardFinanzasPresupuestosRouteImport.update({
+    id: '/dashboard/finanzas/presupuestos',
+    path: '/dashboard/finanzas/presupuestos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSplatServerRoute = ApiSplatServerRouteImport.update({
   id: '/api/$',
   path: '/api/$',
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/auth/verify': typeof AuthVerifyRoute
   '/config/categorias': typeof ConfigCategoriasRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileRoutesByTo {
@@ -96,6 +104,7 @@ export interface FileRoutesByTo {
   '/auth/verify': typeof AuthVerifyRoute
   '/config/categorias': typeof ConfigCategoriasRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileRoutesById {
@@ -108,6 +117,7 @@ export interface FileRoutesById {
   '/auth/verify': typeof AuthVerifyRoute
   '/config/categorias': typeof ConfigCategoriasRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileRouteTypes {
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/config/categorias'
     | '/dashboard/overview'
+    | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/config/categorias'
     | '/dashboard/overview'
+    | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
   id:
     | '__root__'
@@ -143,6 +155,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/config/categorias'
     | '/dashboard/overview'
+    | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
   fileRoutesById: FileRoutesById
 }
@@ -155,6 +168,7 @@ export interface RootRouteChildren {
   AuthVerifyRoute: typeof AuthVerifyRoute
   ConfigCategoriasRoute: typeof ConfigCategoriasRoute
   DashboardOverviewRoute: typeof DashboardOverviewRoute
+  DashboardFinanzasPresupuestosRoute: typeof DashboardFinanzasPresupuestosRoute
   DashboardFinanzasTransaccionesRoute: typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileServerRoutesByFullPath {
@@ -244,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardFinanzasTransaccionesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/finanzas/presupuestos': {
+      id: '/dashboard/finanzas/presupuestos'
+      path: '/dashboard/finanzas/presupuestos'
+      fullPath: '/dashboard/finanzas/presupuestos'
+      preLoaderRoute: typeof DashboardFinanzasPresupuestosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 declare module '@tanstack/react-start/server' {
@@ -267,6 +288,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthVerifyRoute: AuthVerifyRoute,
   ConfigCategoriasRoute: ConfigCategoriasRoute,
   DashboardOverviewRoute: DashboardOverviewRoute,
+  DashboardFinanzasPresupuestosRoute: DashboardFinanzasPresupuestosRoute,
   DashboardFinanzasTransaccionesRoute: DashboardFinanzasTransaccionesRoute,
 }
 export const routeTree = rootRouteImport
