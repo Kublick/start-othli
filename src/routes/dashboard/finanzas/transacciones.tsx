@@ -644,11 +644,8 @@ function RouteComponent() {
                   placeholder="0.00"
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="currency">Moneda</Label>
-                <input type="hidden" value="MXN" />
-              </div>
-              <div className="flex flex-col gap-2">
+
+              <div className="b flex flex-col gap-2 ">
                 <Label htmlFor="type">Tipo *</Label>
                 <Select
                   value={formData.type}
@@ -656,7 +653,7 @@ function RouteComponent() {
                     setFormData({ ...formData, type: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -685,7 +682,7 @@ function RouteComponent() {
                     setFormData({ ...formData, userAccountId: value })
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona una cuenta" />
                   </SelectTrigger>
                   <SelectContent>
