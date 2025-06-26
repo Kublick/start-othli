@@ -1,18 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import {
   ArrowDown,
   ArrowLeftRight,
   ArrowUp,
   Calendar as CalendarIcon2,
+  ChevronLeft,
   ChevronRight,
-  Edit,
   Filter,
   Plus,
   Search,
-  Trash2,
   User,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +63,6 @@ import {
 } from "@/features/dashboard/api/categories";
 import { useCreatePayee, usePayees } from "@/features/dashboard/api/payees";
 import {
-  formatAmount,
   formatDate,
   type Transaction,
   type TransactionFilters,
@@ -75,13 +77,21 @@ import {
 
 export const Route = createFileRoute("/dashboard/finanzas/transacciones")({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      year: search.year as string | undefined,
+      month: search.month as string | undefined,
+    };
+  },
 });
 
 function RouteComponent() {
+  const navigate = useNavigate();
+  const search = useSearch({ from: "/dashboard/finanzas/transacciones" });
+
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
-  const [filters, setFilters] = useState<TransactionFilters>({});
   const [showFilters, setShowFilters] = useState(false);
   const [formData, setFormData] = useState<TransactionFormData>({
     description: "",
@@ -95,17 +105,95 @@ function RouteComponent() {
     payeeId: undefined,
   });
 
+  // Get current month from URL or default to current month
+  const getCurrentMonth = () => {
+    if (search.year && search.month) {
+      return new Date(
+        Number.parseInt(search.year, 10),
+        Number.parseInt(search.month, 10) - 1,
+        1,
+      );
+    }
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  };
+
+  const currentDate = getCurrentMonth();
+  const startOfMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    1,
+  );
+  const endOfMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0,
+  );
+
+  const filters: TransactionFilters = {
+    startDate: startOfMonth.toISOString().split("T")[0],
+    endDate: endOfMonth.toISOString().split("T")[0],
+  };
+
   const { mutateAsync: createCategory } = useCreateCategories();
   const { data: payees = [] } = usePayees();
   const { mutateAsync: createPayee } = useCreatePayee();
 
   // React Query hooks
-  const { data: transactions = [], isLoading } = useTransactions(filters);
+  const { data, isLoading } = useTransactions(filters);
+  const transactions = data?.transactions || [];
+  const pagination = data?.pagination;
   const { data: accounts = [] } = useActiveAccounts();
   const { data: categories = [] } = useActiveCategories();
   const createTransactionMutation = useCreateTransaction();
   const updateTransactionMutation = useUpdateTransaction();
-  const deleteTransactionMutation = useDeleteTransaction();
+
+  // Navigation functions
+  const navigateToMonth = (direction: "prev" | "next") => {
+    const newDate = new Date(currentDate);
+    if (direction === "prev") {
+      newDate.setMonth(newDate.getMonth() - 1);
+    } else {
+      newDate.setMonth(newDate.getMonth() + 1);
+    }
+
+    const newYear = newDate.getFullYear();
+    const newMonth = String(newDate.getMonth() + 1).padStart(2, "0");
+
+    navigate({
+      to: "/dashboard/finanzas/transacciones",
+      search: {
+        year: String(newYear),
+        month: newMonth,
+      },
+    });
+  };
+
+  const formatMonthYear = (date: Date) => {
+    const formatted = date.toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+    });
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  };
+
+  // Initialize URL with current month if no parameters
+  useEffect(() => {
+    if (!search.year || !search.month) {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+
+      navigate({
+        to: "/dashboard/finanzas/transacciones",
+        search: {
+          year: String(year),
+          month: month,
+        },
+        replace: true,
+      });
+    }
+  }, [search.year, search.month, navigate]);
 
   const handleCreateTransaction = () => {
     setEditingTransaction(null);
@@ -176,20 +264,9 @@ function RouteComponent() {
     }
   };
 
-  const handleDeleteTransaction = async (transaction: Transaction) => {
-    if (confirm("¿Estás seguro de que quieres eliminar esta transacción?")) {
-      try {
-        await deleteTransactionMutation.mutateAsync({ id: transaction.id });
-      } catch (error) {
-        console.error("Error deleting transaction:", error);
-        // Error handling is done in the mutation
-      }
-    }
-  };
-
   const getAccountName = (accountId: string | null) => {
     if (!accountId) return "Sin cuenta";
-    const account = accounts.find((acc: any) => acc.id === accountId);
+    const account = accounts.find((acc) => acc.id === accountId);
     return account?.name || "Sin cuenta";
   };
 
@@ -233,6 +310,32 @@ function RouteComponent() {
           </Button>
         </div>
 
+        {/* Month Navigation */}
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigateToMonth("prev")}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h3 className="font-semibold text-lg">
+              {formatMonthYear(currentDate)}
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              {transactions.length} transacciones
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigateToMonth("next")}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
         {/* Filters */}
         <Card>
           <CardHeader>
@@ -262,10 +365,6 @@ function RouteComponent() {
                     <Input
                       id="search"
                       placeholder="Buscar transacciones..."
-                      value={filters.search || ""}
-                      onChange={(e) =>
-                        setFilters({ ...filters, search: e.target.value })
-                      }
                       className="pl-10"
                     />
                   </div>
@@ -273,18 +372,7 @@ function RouteComponent() {
 
                 <div className="space-y-2">
                   <Label htmlFor="type">Tipo</Label>
-                  <Select
-                    value={filters.type || "all"}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        type:
-                          value === "all"
-                            ? undefined
-                            : (value as "income" | "expense" | "transfer"),
-                      })
-                    }
-                  >
+                  <Select>
                     <SelectTrigger>
                       <SelectValue placeholder="Todos los tipos" />
                     </SelectTrigger>
@@ -299,15 +387,7 @@ function RouteComponent() {
 
                 <div className="space-y-2">
                   <Label htmlFor="account">Cuenta</Label>
-                  <Select
-                    value={filters.accountId || "all"}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        accountId: value === "all" ? undefined : value,
-                      })
-                    }
-                  >
+                  <Select>
                     <SelectTrigger>
                       <SelectValue placeholder="Todas las cuentas" />
                     </SelectTrigger>
@@ -324,18 +404,7 @@ function RouteComponent() {
 
                 <div className="space-y-2">
                   <Label htmlFor="category">Categoría</Label>
-                  <Select
-                    value={filters.categoryId?.toString() || "all"}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        categoryId:
-                          value === "all"
-                            ? undefined
-                            : Number.parseInt(value, 10),
-                      })
-                    }
-                  >
+                  <Select>
                     <SelectTrigger>
                       <SelectValue placeholder="Todas las categorías" />
                     </SelectTrigger>
@@ -353,35 +422,25 @@ function RouteComponent() {
                   </Select>
                 </div>
               </div>
-
-              <div className="mt-4 flex justify-end">
-                <Button variant="outline" onClick={() => setFilters({})}>
-                  Limpiar Filtros
-                </Button>
-              </div>
             </CardContent>
           )}
         </Card>
 
         {/* Transactions Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>Lista de Transacciones</CardTitle>
-            <CardDescription>
-              {transactions.length} transacción
-              {transactions.length !== 1 ? "es" : ""} encontrada
-              {transactions.length !== 1 ? "s" : ""}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             {transactions.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="mb-4 text-muted-foreground">
-                  No hay transacciones para mostrar
+                <p className="text-muted-foreground">
+                  No hay transacciones para {formatMonthYear(currentDate)}
                 </p>
-                <Button onClick={handleCreateTransaction}>
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={handleCreateTransaction}
+                >
                   <Plus className="mr-2 h-4 w-4" />
-                  Crear Primera Transacción
+                  Crear primera transacción
                 </Button>
               </div>
             ) : (
@@ -528,7 +587,11 @@ function RouteComponent() {
                               e.target.value = transaction.amount;
                             }
                           }}
-                          className="w-full text-right font-mono"
+                          className={`w-full text-right font-mono ${
+                            Number.parseFloat(transaction.amount) < 0
+                              ? "text-red-600"
+                              : ""
+                          }`}
                           placeholder="0.00"
                         />
                       </TableCell>
@@ -707,12 +770,9 @@ function RouteComponent() {
                 />
               </div>
             </div>
-            <SheetFooter className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsSheetOpen(false)}>
-                Cancelar
-              </Button>
+            <SheetFooter>
               <Button onClick={handleSaveTransaction}>
-                {editingTransaction ? "Actualizar" : "Crear"}
+                {editingTransaction ? "Actualizar" : "Crear"} Transacción
               </Button>
             </SheetFooter>
           </SheetContent>

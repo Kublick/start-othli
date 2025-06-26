@@ -55,6 +55,18 @@ export interface TransactionFilters {
   categoryId?: number;
   type?: "income" | "expense" | "transfer";
   search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface TransactionResponse {
+  transactions: Transaction[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 // Query keys
@@ -70,7 +82,7 @@ export const transactionKeys = {
 // Fetch transactions
 const fetchTransactions = async (
   filters: TransactionFilters = {},
-): Promise<Transaction[]> => {
+): Promise<TransactionResponse> => {
   const params = new URLSearchParams();
 
   if (filters.startDate) params.append("startDate", filters.startDate);
@@ -80,6 +92,8 @@ const fetchTransactions = async (
     params.append("categoryId", filters.categoryId.toString());
   if (filters.type) params.append("type", filters.type);
   if (filters.search) params.append("search", filters.search);
+  if (filters.page) params.append("page", filters.page.toString());
+  if (filters.limit) params.append("limit", filters.limit.toString());
 
   const response = await client.api.transactions.$get({
     query: Object.fromEntries(params),
@@ -89,7 +103,15 @@ const fetchTransactions = async (
     throw new Error("Failed to fetch transactions");
   }
   const data = await response.json();
-  return data.transactions || [];
+  return {
+    transactions: data.transactions || [],
+    pagination: data.pagination || {
+      page: 1,
+      limit: 20,
+      total: 0,
+      totalPages: 0,
+    },
+  };
 };
 
 // Create transaction
@@ -192,9 +214,13 @@ export const useDeleteTransaction = () => {
 
 // Utility hooks
 export const useRecentTransactions = (limit = 10) => {
-  const { data: transactions = [], ...rest } = useTransactions();
+  const { data, ...rest } = useTransactions();
+  const transactions = data?.transactions || [];
   const recentTransactions = transactions
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .sort(
+      (a: Transaction, b: Transaction) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime(),
+    )
     .slice(0, limit);
   return { data: recentTransactions, ...rest };
 };
@@ -202,17 +228,20 @@ export const useRecentTransactions = (limit = 10) => {
 export const useTransactionsByType = (
   type: "income" | "expense" | "transfer",
 ) => {
-  const { data: transactions = [], ...rest } = useTransactions({ type });
+  const { data, ...rest } = useTransactions({ type });
+  const transactions = data?.transactions || [];
   return { data: transactions, ...rest };
 };
 
 export const useTransactionsByAccount = (accountId: string) => {
-  const { data: transactions = [], ...rest } = useTransactions({ accountId });
+  const { data, ...rest } = useTransactions({ accountId });
+  const transactions = data?.transactions || [];
   return { data: transactions, ...rest };
 };
 
 export const useTransactionsByCategory = (categoryId: number) => {
-  const { data: transactions = [], ...rest } = useTransactions({ categoryId });
+  const { data, ...rest } = useTransactions({ categoryId });
+  const transactions = data?.transactions || [];
   return { data: transactions, ...rest };
 };
 

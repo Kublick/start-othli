@@ -54,7 +54,12 @@ export const auth = betterAuth({
         to: user.email,
         subject: "Verifica tu correo electronico",
         text: "Verifica tu correo electronico",
-        html: `Verifica tu correo electronico: ${confirmationUrl}`,
+        react: (
+          <EmailConfirmation
+            name={user.name}
+            confirmationUrl={confirmationUrl}
+          />
+        ),
       });
       if (error) {
         console.error(error);

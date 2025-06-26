@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, like, lte } from "drizzle-orm";
+import { and, desc, eq, gte, like, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "@/db";
 import { transaction } from "@/db/schema";
@@ -14,8 +14,24 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         return c.json({ error: "Unauthorized" }, 401);
       }
 
-      const { startDate, endDate, accountId, categoryId, type, search } =
-        c.req.query();
+      const {
+        startDate,
+        endDate,
+        accountId,
+        categoryId,
+        type,
+        search,
+        page = "1",
+        limit = "20",
+      } = c.req.query();
+
+      // Parse pagination parameters
+      const pageNum = Math.max(1, Number.parseInt(page, 10) || 1);
+      const limitNum = Math.min(
+        100,
+        Math.max(1, Number.parseInt(limit, 10) || 20),
+      );
+      const offset = (pageNum - 1) * limitNum;
 
       // Build where conditions
       const conditions = [eq(transaction.userId, user.id)];
@@ -34,7 +50,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
 
       if (categoryId) {
         conditions.push(
-          eq(transaction.categoryId, Number.parseInt(categoryId)),
+          eq(transaction.categoryId, Number.parseInt(categoryId, 10)),
         );
       }
 
@@ -48,13 +64,30 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         conditions.push(like(transaction.description, `%${search}%`));
       }
 
+      // Get total count for pagination
+      const totalCount = await db
+        .select({ count: sql`count(*)` })
+        .from(transaction)
+        .where(and(...conditions));
+
+      // Get paginated transactions
       const transactions = await db
         .select()
         .from(transaction)
         .where(and(...conditions))
-        .orderBy(desc(transaction.date));
+        .orderBy(desc(transaction.date))
+        .limit(limitNum)
+        .offset(offset);
 
-      return c.json({ transactions });
+      return c.json({
+        transactions,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total: Number(totalCount[0]?.count || 0),
+          totalPages: Math.ceil(Number(totalCount[0]?.count || 0) / limitNum),
+        },
+      });
     } catch (error) {
       console.error("Error fetching transactions:", error);
       return c.json({ error: "Internal server error" }, 500);
