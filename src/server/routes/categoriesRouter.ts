@@ -319,7 +319,11 @@ export const categoriesRouter = new Hono<{ Variables: Context }>()
           archived:
             archived !== undefined ? archived : existingCategory.archived,
           archivedOn:
-            archivedOn !== undefined ? archivedOn : existingCategory.archivedOn,
+            archivedOn !== undefined
+              ? archivedOn
+                ? new Date(archivedOn)
+                : null
+              : existingCategory.archivedOn,
           updatedAt: new Date(),
         })
         .where(and(eq(categories.id, id), eq(categories.userId, user.id)))

@@ -421,10 +421,12 @@ function RouteComponent() {
     if (!editingCategory) return;
 
     try {
+      const now = new Date();
+
       await archiveCategoryMutation.mutateAsync({
         id: editingCategory.id,
         archived: archive,
-        archivedOn: archive ? new Date().toISOString() : null,
+        archivedOn: archive ? now.toISOString() : null,
       });
       setIsSheetOpen(false);
     } catch (error) {
