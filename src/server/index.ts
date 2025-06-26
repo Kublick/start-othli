@@ -3,8 +3,10 @@ import { auth } from "./auth";
 import type { Context } from "./context";
 import { categoriesRouter } from "./routes/categoriesRouter";
 import financialAccountRouter from "./routes/financialAccountRouter";
+import payeesRouter from "./routes/payeesRouter";
 import { seedRouter } from "./routes/seed";
 import { setupRouter } from "./routes/setupRouter";
+import transactionsRouter from "./routes/transactionsRouter";
 
 const app = new Hono<{ Variables: Context }>();
 
@@ -30,7 +32,9 @@ const routes = app
   .basePath("/api")
   .route("/categories", categoriesRouter)
   .route("/financial-accounts", financialAccountRouter)
-  .route("/setup", setupRouter);
+  .route("/setup", setupRouter)
+  .route("/transactions", transactionsRouter)
+  .route("/payees", payeesRouter);
 
 export type AppType = typeof routes;
 

@@ -93,7 +93,7 @@ export default function DashboardLayout({
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link to="/config/categorias">
+                        <Link to="/config/cuentas">
                           <User className="h-4 w-4" />
                           <span>Cuentas</span>
                         </Link>

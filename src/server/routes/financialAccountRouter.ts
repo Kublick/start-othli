@@ -174,6 +174,217 @@ const financialAccountRouter = new Hono<{ Variables: Context }>()
       console.error("Error fetching financial accounts:", error);
       return c.json({ error: "Internal server error" }, 500);
     }
+  })
+  .put("/", async (c) => {
+    const user = c.get("user");
+
+    if (!user) {
+      return c.json(
+        {
+          error: "Unauthorized",
+        },
+        401,
+      );
+    }
+
+    try {
+      const body = await c.req.json();
+      const {
+        id,
+        name,
+        type,
+        balance,
+        currency,
+        institutionName,
+        excludeTransactions,
+      } = body;
+
+      if (!id || !name || typeof name !== "string") {
+        return c.json(
+          {
+            error: "Se requiere un ID y nombre válidos para la cuenta",
+          },
+          400,
+        );
+      }
+
+      if (!type || !accountTypeMapping[type]) {
+        return c.json(
+          {
+            error: "Se requiere un tipo válido para la cuenta",
+          },
+          400,
+        );
+      }
+
+      // Check if account belongs to user
+      const existingAccount = await db.query.userAccount.findFirst({
+        where: eq(userAccount.id, id),
+      });
+
+      if (!existingAccount || existingAccount.userId !== user.id) {
+        return c.json(
+          {
+            error: "Cuenta no encontrada",
+          },
+          404,
+        );
+      }
+
+      const [updatedAccount] = await db
+        .update(userAccount)
+        .set({
+          name,
+          type: accountTypeMapping[type],
+          balance: balance || "0.00",
+          currency: currency || "USD",
+          institutionName: institutionName || null,
+          excludeTransactions: excludeTransactions || false,
+          updatedAt: new Date(),
+        })
+        .where(eq(userAccount.id, id))
+        .returning();
+
+      return c.json({
+        success: true,
+        message: "Cuenta actualizada exitosamente",
+        account: updatedAccount,
+      });
+    } catch (error) {
+      console.error("Error updating account:", error);
+
+      return c.json(
+        {
+          error: "Error interno del servidor",
+        },
+        500,
+      );
+    }
+  })
+  .delete("/", async (c) => {
+    const user = c.get("user");
+
+    if (!user) {
+      return c.json(
+        {
+          error: "Unauthorized",
+        },
+        401,
+      );
+    }
+
+    try {
+      const body = await c.req.json();
+      const { id } = body;
+
+      if (!id) {
+        return c.json(
+          {
+            error: "Se requiere un ID válido para la cuenta",
+          },
+          400,
+        );
+      }
+
+      // Check if account belongs to user
+      const existingAccount = await db.query.userAccount.findFirst({
+        where: eq(userAccount.id, id),
+      });
+
+      if (!existingAccount || existingAccount.userId !== user.id) {
+        return c.json(
+          {
+            error: "Cuenta no encontrada",
+          },
+          404,
+        );
+      }
+
+      await db.delete(userAccount).where(eq(userAccount.id, id));
+
+      return c.json({
+        success: true,
+        message: "Cuenta eliminada exitosamente",
+      });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+
+      return c.json(
+        {
+          error: "Error interno del servidor",
+        },
+        500,
+      );
+    }
+  })
+  .patch("/", async (c) => {
+    const user = c.get("user");
+
+    if (!user) {
+      return c.json(
+        {
+          error: "Unauthorized",
+        },
+        401,
+      );
+    }
+
+    try {
+      const body = await c.req.json();
+      const { id, closedOn } = body;
+
+      if (!id) {
+        return c.json(
+          {
+            error: "Se requiere un ID válido para la cuenta",
+          },
+          400,
+        );
+      }
+
+      // Check if account belongs to user
+      const existingAccount = await db.query.userAccount.findFirst({
+        where: eq(userAccount.id, id),
+      });
+
+      if (!existingAccount || existingAccount.userId !== user.id) {
+        return c.json(
+          {
+            error: "Cuenta no encontrada",
+          },
+          404,
+        );
+      }
+
+      const [updatedAccount] = await db
+        .update(userAccount)
+        .set({
+          closedOn:
+            closedOn !== undefined
+              ? closedOn
+                ? new Date(closedOn)
+                : null
+              : existingAccount.closedOn,
+          updatedAt: new Date(),
+        })
+        .where(eq(userAccount.id, id))
+        .returning();
+
+      return c.json({
+        success: true,
+        message: "Cuenta actualizada exitosamente",
+        account: updatedAccount,
+      });
+    } catch (error) {
+      console.error("Error updating account:", error);
+
+      return c.json(
+        {
+          error: "Error interno del servidor",
+        },
+        500,
+      );
+    }
   });
 
 export default financialAccountRouter;

@@ -171,35 +171,13 @@ function SortableTableRow({
           </button>
         )}
       </TableCell>
-      <TableCell className="text-muted-foreground">
+      <TableCell className="text-center">
+        <Badge variant={category.isIncome ? "default" : "secondary"}>
+          {category.isIncome ? "Ingreso" : "Gasto"}
+        </Badge>
+      </TableCell>
+      <TableCell className="text-center">
         {category.description || "Sin descripción"}
-      </TableCell>
-      <TableCell className="text-center">
-        <div className="flex items-center justify-center gap-2">
-          <Badge variant={category.isIncome ? "default" : "secondary"}>
-            {category.isIncome ? "Ingreso" : "Gasto"}
-          </Badge>
-          {category.excludeFromBudget && (
-            <Badge variant="outline">Sin Presupuesto</Badge>
-          )}
-          {category.excludeFromTotals && (
-            <Badge variant="outline">Sin Totales</Badge>
-          )}
-        </div>
-      </TableCell>
-      <TableCell className="text-center">
-        <div className="flex items-center justify-center gap-1">
-          {category.excludeFromBudget && (
-            <Badge variant="outline" className="text-xs">
-              Sin Presupuesto
-            </Badge>
-          )}
-          {category.excludeFromTotals && (
-            <Badge variant="outline" className="text-xs">
-              Sin Totales
-            </Badge>
-          )}
-        </div>
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-2">
@@ -495,9 +473,8 @@ function RouteComponent() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nombre</TableHead>
-                      <TableHead>Descripción</TableHead>
                       <TableHead className="text-center">Tipo</TableHead>
-                      <TableHead className="text-center">Opciones</TableHead>
+                      <TableHead className="text-center">Descripción</TableHead>
                       <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -551,8 +528,8 @@ function RouteComponent() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nombre</TableHead>
-                    <TableHead>Descripción</TableHead>
                     <TableHead className="text-center">Tipo</TableHead>
+                    <TableHead>Descripción</TableHead>
                     <TableHead className="text-center">Archivada</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
@@ -563,15 +540,15 @@ function RouteComponent() {
                       <TableCell className="font-medium text-muted-foreground">
                         {category.name}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {category.description || "Sin descripción"}
-                      </TableCell>
                       <TableCell className="text-center">
                         <Badge
                           variant={category.isIncome ? "default" : "secondary"}
                         >
                           {category.isIncome ? "Ingreso" : "Gasto"}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {category.description || "Sin descripción"}
                       </TableCell>
                       <TableCell className="text-center text-muted-foreground">
                         {category.archivedOn

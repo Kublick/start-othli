@@ -267,7 +267,7 @@ export const useReorderCategories = () => {
       // Return a context object with the snapshotted value
       return { previousCategories };
     },
-    onError: (err, variables, context) => {
+    onError: (err, _, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousCategories) {
         queryClient.setQueryData(
