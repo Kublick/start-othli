@@ -1,38 +1,52 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { BudgetCategoriesTable } from "@/components/budget-categories-table";
+import { useState } from "react";
+import { BudgetCategoryTable } from "@/components/budget-expenses-table";
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useActiveCategories } from "@/features/dashboard/api/categories";
+import { useTransactions } from "@/features/dashboard/api/transactions";
 
 export const Route = createFileRoute("/dashboard/finanzas/presupuestos")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  // Fetch categories and transactions for the current month
+  const { data: categories = [] } = useActiveCategories();
+  const { data } = useTransactions();
+  const transactions = data?.transactions || [];
+
+  // Local state for budgets (categoryId -> budgeted amount)
+  const [budgets, setBudgets] = useState<Record<number, number>>({});
+
+  const handleBudgetChange = (categoryId: number, value: number) => {
+    setBudgets((prev) => ({ ...prev, [categoryId]: value }));
+    // TODO: Persist budget to backend
+  };
+
   return (
     <DashboardLayout title="Presupuestos">
       <div className="space-y-6">
         <div className="rounded-lg border bg-card p-6">
-          <h2 className="mb-2 font-bold text-2xl">Gestión de Presupuestos</h2>
+          <h2 className="mb-2 font-bold text-2xl">Presupuesto</h2>
           <p className="text-muted-foreground">
-            Administra tus presupuestos personales y compartidos, y configura
-            las categorías para cada uno.
+            Establece tu presupuesto mensual para cada categoría. La actividad
+            se calcula automáticamente según tus transacciones del mes.
           </p>
         </div>
-
-        <Tabs defaultValue="personal" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="personal">Presupuestos Personales</TabsTrigger>
-            <TabsTrigger value="shared">Presupuestos Compartidos</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="personal" className="mt-6">
-            <BudgetCategoriesTable budgetType="personal" />
-          </TabsContent>
-
-          <TabsContent value="shared" className="mt-6">
-            <BudgetCategoriesTable budgetType="shared" />
-          </TabsContent>
-        </Tabs>
+        <BudgetCategoryTable
+          type="income"
+          categories={categories}
+          transactions={transactions}
+          budgets={budgets}
+          onBudgetChange={handleBudgetChange}
+        />
+        <BudgetCategoryTable
+          type="expense"
+          categories={categories}
+          transactions={transactions}
+          budgets={budgets}
+          onBudgetChange={handleBudgetChange}
+        />
       </div>
     </DashboardLayout>
   );

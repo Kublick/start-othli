@@ -1,0 +1,374 @@
+import {
+  type CellContext,
+  type ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import * as React from "react";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { Category } from "@/features/dashboard/api/categories";
+import type { Transaction } from "@/features/dashboard/api/transactions";
+
+// Helper for currency formatting
+const formatCurrency = (
+  value: number | null | undefined,
+  placeholder = "MX$0.00",
+) => {
+  if (value === null || value === undefined || Number.isNaN(value))
+    return placeholder;
+  return `$${value.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+interface BudgetRow {
+  id: number;
+  name: string;
+  budgeted: number;
+  activity: number;
+  available: number;
+}
+
+interface BudgetCategoryTableProps {
+  type: "income" | "expense";
+  categories: Category[];
+  transactions: Transaction[];
+  budgets: Record<number, number>; // categoryId -> budgeted amount
+  onBudgetChange: (categoryId: number, value: number) => void | Promise<void>;
+}
+
+function BudgetInput({
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+  disabled,
+}: {
+  value: string | number;
+  onChange: (value: string) => void;
+  onBlur: React.FocusEventHandler<HTMLInputElement>;
+  onKeyDown: React.KeyboardEventHandler<HTMLInputElement>;
+  disabled?: boolean;
+}) {
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <Input
+      type="text"
+      value={
+        isFocused ? value : value !== "" ? formatCurrency(Number(value)) : ""
+      }
+      onChange={(e) =>
+        onChange(
+          e.target.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"),
+        )
+      }
+      onFocus={() => setIsFocused(true)}
+      onBlur={(e) => {
+        setIsFocused(false);
+        onBlur(e);
+      }}
+      onKeyDown={onKeyDown}
+      className="w-28 text-right tabular-nums"
+      disabled={disabled}
+    />
+  );
+}
+
+function ExpectedCell({
+  info,
+  onBudgetChange,
+}: {
+  info: CellContext<BudgetRow, number | null>;
+  onBudgetChange: (categoryId: number, value: number) => void | Promise<void>;
+}) {
+  const rowId = info.row.original.id;
+  const initialValue = info.getValue();
+  const [value, setValue] = useState<string>(
+    info.row.original.budgeted?.toString() ?? "",
+  );
+  const [originalValue, setOriginalValue] = useState<string>(
+    info.row.original.budgeted?.toString() ?? "",
+  );
+  const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    setValue(info.row.original.budgeted?.toString() ?? "");
+    setOriginalValue(info.row.original.budgeted?.toString() ?? "");
+  }, [info.row.original.budgeted]);
+
+  const handleChange = (newValue: string) => setValue(newValue);
+
+  const handleBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    if (value !== originalValue) {
+      setLoading(true);
+      try {
+        await onBudgetChange(rowId, +value);
+        setOriginalValue(value);
+      } catch (e) {
+        console.error(e);
+        setValue(originalValue);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      (event.target as HTMLInputElement).blur();
+    } else if (event.key === "Escape") {
+      setValue(originalValue);
+      (event.target as HTMLInputElement).blur();
+    }
+  };
+
+  if (initialValue === null && value === null)
+    return <div className="text-right ">{formatCurrency(null)} </div>;
+
+  return (
+    <div className="flex items-center gap-2">
+      <BudgetInput
+        value={value}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        disabled={loading}
+      />
+    </div>
+  );
+}
+
+export function BudgetCategoryTable({
+  type,
+  categories,
+  transactions,
+  budgets,
+  onBudgetChange,
+}: BudgetCategoryTableProps) {
+  // Filter categories by type
+  const filteredCategories = categories.filter((cat) =>
+    type === "income" ? cat.isIncome : !cat.isIncome,
+  );
+
+  // Build table data
+  const data: BudgetRow[] = filteredCategories.map((cat) => {
+    let activity = 0;
+    if (type === "income") {
+      activity = transactions
+        .filter((t) => t.categoryId === cat.id)
+        .reduce((sum, t) => {
+          const amt = Number.parseFloat(t.amount);
+          return amt > 0 ? sum + amt : sum;
+        }, 0);
+    } else {
+      activity = transactions
+        .filter((t) => t.categoryId === cat.id)
+        .reduce((sum, t) => {
+          const amt = Number.parseFloat(t.amount);
+          return amt < 0 ? sum + Math.abs(amt) : sum;
+        }, 0);
+    }
+    const budgeted = budgets[cat.id] ?? 0;
+    const available =
+      type === "income" ? activity - budgeted : budgeted - activity;
+    return {
+      id: cat.id,
+      name: cat.name,
+      budgeted,
+      activity,
+      available,
+    };
+  });
+
+  // Column sizing
+  const TABLE_WIDTH = 1000;
+  const CATEGORY_WIDTH = Math.floor(TABLE_WIDTH * 0.55);
+  const OTHER_COLUMNS_WIDTH = Math.floor((TABLE_WIDTH - CATEGORY_WIDTH) / 3);
+
+  const label = type === "income" ? "Ingresos" : "Gastos";
+
+  const columns = React.useMemo<ColumnDef<BudgetRow, number | string>[]>(
+    () => [
+      {
+        id: "categoryName",
+        accessorKey: "name",
+        header: () => (
+          <div className="pl-4 text-left font-semibold uppercase tracking-wider">
+            {label}
+          </div>
+        ),
+        cell: (info) => (
+          <div className="pl-4 font-medium ">{info.getValue<string>()}</div>
+        ),
+        size: CATEGORY_WIDTH,
+      },
+      {
+        accessorKey: "budgeted",
+        header: () => (
+          <div className="flex items-center gap-2 font-semibold uppercase tracking-wider hover:text-black">
+            Presupuestado
+          </div>
+        ),
+        cell: (info) => (
+          <ExpectedCell info={info} onBudgetChange={onBudgetChange} />
+        ),
+        size: OTHER_COLUMNS_WIDTH,
+      },
+      {
+        accessorKey: "activity",
+        header: () => (
+          <div className="text-right font-semibold uppercase tracking-wider">
+            Actividad
+          </div>
+        ),
+        cell: (info) => (
+          <div className="text-right">
+            {formatCurrency(info.getValue<number | null>())}
+          </div>
+        ),
+        size: OTHER_COLUMNS_WIDTH,
+      },
+      {
+        accessorKey: "available",
+        header: () => (
+          <div className="flex items-center justify-end gap-2 text-right font-semibold uppercase tracking-wider hover:text-black">
+            Disponible
+          </div>
+        ),
+        cell: (info) => {
+          const budgetableAmount = info.getValue<number | null>();
+          let textColor = "";
+          if (budgetableAmount !== null && budgetableAmount > 0)
+            textColor = "text-green-700 font-bold";
+          else if (budgetableAmount !== null && budgetableAmount < 0)
+            textColor = "text-red-700 font-bold";
+          else if (budgetableAmount === 0) textColor = "";
+
+          return (
+            <div className="w-full text-right">
+              <span className={textColor}>
+                {formatCurrency(budgetableAmount)}
+              </span>
+            </div>
+          );
+        },
+        size: OTHER_COLUMNS_WIDTH,
+      },
+    ],
+    [onBudgetChange, CATEGORY_WIDTH, OTHER_COLUMNS_WIDTH, label],
+  );
+
+  // Table state and filtering
+  const [tableData, setTableData] = useState<BudgetRow[]>([]);
+  const [filtering, setFiltering] = useState("");
+
+  useEffect(() => {
+    setTableData(data);
+  }, [data]);
+
+  const table = useReactTable({
+    data: tableData,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId: (row) => `${row.id}`,
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      globalFilter: filtering,
+    },
+    onGlobalFilterChange: setFiltering,
+    meta: {},
+  });
+
+  // Totals
+  const totalBudgeted = data.reduce((acc, row) => acc + (row.budgeted ?? 0), 0);
+  const totalActivity = data.reduce((acc, row) => acc + (row.activity ?? 0), 0);
+  const totalAvailable = data.reduce(
+    (acc, row) => acc + (row.available ?? 0),
+    0,
+  );
+
+  return (
+    <div className="py-4 lg:py-8">
+      <div className="rounded-md border">
+        <Table style={{ tableLayout: "fixed" }}>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    style={{ width: `${header.getSize()}px` }}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      style={{ width: `${cell.column.getSize()}px` }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Uh ho no hay resultados aun...
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell className="pl-6">Totales</TableCell>
+              <TableCell className="pl-5">
+                {formatCurrency(totalBudgeted)}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(totalActivity)}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(totalAvailable)}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </div>
+    </div>
+  );
+}
