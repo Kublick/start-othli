@@ -3,6 +3,7 @@ import {
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
+import { format } from "date-fns";
 import {
   ArrowDown,
   ArrowLeftRight,
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
@@ -31,6 +33,11 @@ import { CategoryCombobox } from "@/components/ui/category-combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PayeeCombobox } from "@/components/ui/payee-combobox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -63,7 +70,6 @@ import {
 } from "@/features/dashboard/api/categories";
 import { useCreatePayee, usePayees } from "@/features/dashboard/api/payees";
 import {
-  formatDate,
   type Transaction,
   type TransactionFilters,
   type TransactionFormData,
@@ -281,6 +287,59 @@ function RouteComponent() {
     }
   };
 
+  function EditableDateCell({ transaction }: { transaction: Transaction }) {
+    const [open, setOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState(
+      new Date(transaction.date),
+    );
+    const updateTransaction = useUpdateTransaction();
+
+    const handleDateChange = (date: Date | undefined) => {
+      if (!date) return;
+      setSelectedDate(date);
+      setOpen(false);
+      updateTransaction.mutate({
+        id: transaction.id,
+        description: transaction.description,
+        amount: transaction.amount,
+        type: transaction.type,
+        currency: transaction.currency,
+        userAccountId: transaction.userAccountId ?? "",
+        date: date.toISOString(),
+        notes: transaction.notes ?? undefined,
+        categoryId: transaction.categoryId ?? undefined,
+        payeeId: transaction.payeeId ?? undefined,
+        isTransfer: transaction.isTransfer,
+        transferAccountId: transaction.transferAccountId ?? undefined,
+      });
+    };
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={
+              "flex w-full cursor-pointer items-center justify-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-sm transition-colors hover:border-primary hover:bg-accent hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary "
+            }
+            onClick={() => setOpen(true)}
+          >
+            <CalendarIcon2 className="h-3 w-3" />
+            <span>{format(selectedDate, "yyyy-MM-dd")}</span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent>
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleDateChange}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
   if (isLoading) {
     return (
       <DashboardLayout title="Transacciones">
@@ -447,19 +506,22 @@ function RouteComponent() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Fecha</TableHead>
                     <TableHead>Beneficiario</TableHead>
                     <TableHead>Categoría</TableHead>
                     <TableHead>Descripción</TableHead>
                     <TableHead className="text-center">Tipo</TableHead>
                     <TableHead className="text-center">Monto</TableHead>
                     <TableHead className="text-center">Cuenta</TableHead>
-                    <TableHead className="text-center">Fecha</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {transactions.map((transaction) => (
                     <TableRow key={transaction.id}>
+                      <TableCell className="text-center">
+                        <EditableDateCell transaction={transaction} />
+                      </TableCell>
                       <TableCell>
                         <PayeeCombobox
                           value={transaction.payeeId ?? undefined}
@@ -600,14 +662,6 @@ function RouteComponent() {
                           <User className="h-3 w-3 text-muted-foreground" />
                           <span className="text-muted-foreground text-sm">
                             {getAccountName(transaction.userAccountId)}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <CalendarIcon2 className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-muted-foreground text-sm">
-                            {formatDate(transaction.date)}
                           </span>
                         </div>
                       </TableCell>
