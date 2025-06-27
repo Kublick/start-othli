@@ -14,7 +14,7 @@ export interface Transaction {
   userAccountId: string | null;
   categoryId: number | null;
   sharedBudgetId: string | null;
-  splitInfo: any | null;
+  splitInfo: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
   payeeId: number | null;

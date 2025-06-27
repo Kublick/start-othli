@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { auth } from "./auth";
 import type { Context } from "./context";
+import { budgetsRouter } from "./routes/budgetsRouter";
 import { categoriesRouter } from "./routes/categoriesRouter";
 import financialAccountRouter from "./routes/financialAccountRouter";
 import payeesRouter from "./routes/payeesRouter";
@@ -30,6 +31,7 @@ const routes = app
   .get("/health", async (c) => c.text("OK"))
   .route("/api/seed", seedRouter)
   .basePath("/api")
+  .route("/budgets", budgetsRouter)
   .route("/categories", categoriesRouter)
   .route("/financial-accounts", financialAccountRouter)
   .route("/setup", setupRouter)

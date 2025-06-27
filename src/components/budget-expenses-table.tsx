@@ -6,8 +6,10 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+
 import * as React from "react";
 import { useEffect, useState } from "react";
+import TransactionsDialog from "@/components/transactions-dialog";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -18,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import type { Category } from "@/features/dashboard/api/categories";
 import type { Transaction } from "@/features/dashboard/api/transactions";
 
@@ -89,7 +92,7 @@ function ExpectedCell({
   info,
   onBudgetChange,
 }: {
-  info: CellContext<BudgetRow, number | null>;
+  info: CellContext<BudgetRow, number>;
   onBudgetChange: (categoryId: number, value: number) => void | Promise<void>;
 }) {
   const rowId = info.row.original.id;
@@ -109,7 +112,7 @@ function ExpectedCell({
 
   const handleChange = (newValue: string) => setValue(newValue);
 
-  const handleBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleBlur = async () => {
     if (value !== originalValue) {
       setLoading(true);
       try {
@@ -134,8 +137,8 @@ function ExpectedCell({
     }
   };
 
-  if (initialValue === null && value === null)
-    return <div className="text-right ">{formatCurrency(null)} </div>;
+  if (initialValue === 0 && value === "")
+    return <div className="text-right ">{formatCurrency(0)} </div>;
 
   return (
     <div className="flex items-center gap-2">
@@ -158,39 +161,61 @@ export function BudgetCategoryTable({
   onBudgetChange,
 }: BudgetCategoryTableProps) {
   // Filter categories by type
-  const filteredCategories = categories.filter((cat) =>
-    type === "income" ? cat.isIncome : !cat.isIncome,
+  const filteredCategories = React.useMemo(
+    () =>
+      categories.filter((cat) =>
+        type === "income" ? cat.isIncome : !cat.isIncome,
+      ),
+    [categories, type],
   );
 
+  // Memoize transactions by category for performance
+  const transactionsByCategory = React.useMemo(() => {
+    const map = new Map<number, Transaction[]>();
+    transactions.forEach((transaction) => {
+      const categoryId = transaction.categoryId ?? 0; // Assuming 0 as a default or placeholder value if categoryId is null
+      if (!map.has(categoryId)) {
+        map.set(categoryId, []);
+      }
+      const categoryTransactions = map.get(categoryId);
+      if (categoryTransactions) {
+        categoryTransactions.push(transaction);
+      }
+    });
+    return map;
+  }, [transactions]);
+
   // Build table data
-  const data: BudgetRow[] = filteredCategories.map((cat) => {
-    let activity = 0;
-    if (type === "income") {
-      activity = transactions
-        .filter((t) => t.categoryId === cat.id)
-        .reduce((sum, t) => {
-          const amt = Number.parseFloat(t.amount);
-          return amt > 0 ? sum + amt : sum;
-        }, 0);
-    } else {
-      activity = transactions
-        .filter((t) => t.categoryId === cat.id)
-        .reduce((sum, t) => {
-          const amt = Number.parseFloat(t.amount);
-          return amt < 0 ? sum + Math.abs(amt) : sum;
-        }, 0);
-    }
-    const budgeted = budgets[cat.id] ?? 0;
-    const available =
-      type === "income" ? activity - budgeted : budgeted - activity;
-    return {
-      id: cat.id,
-      name: cat.name,
-      budgeted,
-      activity,
-      available,
-    };
-  });
+  const data: BudgetRow[] = React.useMemo(
+    () =>
+      filteredCategories.map((cat) => {
+        let activity = 0;
+        const categoryTransactions = transactionsByCategory.get(cat.id) || [];
+
+        if (type === "income") {
+          activity = categoryTransactions.reduce((sum, t) => {
+            const amt = Number.parseFloat(t.amount);
+            return amt > 0 ? sum + amt : sum;
+          }, 0);
+        } else {
+          activity = categoryTransactions.reduce((sum, t) => {
+            const amt = Number.parseFloat(t.amount);
+            return amt < 0 ? sum + Math.abs(amt) : sum;
+          }, 0);
+        }
+        const budgeted = Number(budgets[cat.id] || 0);
+        const available =
+          type === "income" ? activity - budgeted : budgeted - activity;
+        return {
+          id: cat.id,
+          name: cat.name,
+          budgeted,
+          activity,
+          available,
+        };
+      }),
+    [filteredCategories, transactionsByCategory, budgets, type],
+  );
 
   // Column sizing
   const TABLE_WIDTH = 1000;
@@ -233,11 +258,28 @@ export function BudgetCategoryTable({
             Actividad
           </div>
         ),
-        cell: (info) => (
-          <div className="text-right">
-            {formatCurrency(info.getValue<number | null>())}
-          </div>
-        ),
+        cell: (info) => {
+          const value = info.getValue<number>();
+          const categoryId = info.row.original.id;
+          const categoryTransactions =
+            transactionsByCategory.get(categoryId) || [];
+          const category = categories.find((c) => c.id === categoryId);
+
+          return (
+            <div className="relative flex items-center">
+              {categoryTransactions.length > 0 && (
+                <div className="absolute left-0">
+                  <TransactionsDialog
+                    id={categoryId.toString()}
+                    transactions={categoryTransactions}
+                    category={category || null}
+                  />
+                </div>
+              )}
+              <div className="w-full text-right">{formatCurrency(value)}</div>
+            </div>
+          );
+        },
         size: OTHER_COLUMNS_WIDTH,
       },
       {
@@ -248,12 +290,10 @@ export function BudgetCategoryTable({
           </div>
         ),
         cell: (info) => {
-          const budgetableAmount = info.getValue<number | null>();
+          const budgetableAmount = info.getValue<number>();
           let textColor = "";
-          if (budgetableAmount !== null && budgetableAmount > 0)
-            textColor = "text-green-700 font-bold";
-          else if (budgetableAmount !== null && budgetableAmount < 0)
-            textColor = "text-red-700 font-bold";
+          if (budgetableAmount > 0) textColor = "text-green-700 font-bold";
+          else if (budgetableAmount < 0) textColor = "text-red-700 font-bold";
           else if (budgetableAmount === 0) textColor = "";
 
           return (
@@ -267,7 +307,14 @@ export function BudgetCategoryTable({
         size: OTHER_COLUMNS_WIDTH,
       },
     ],
-    [onBudgetChange, CATEGORY_WIDTH, OTHER_COLUMNS_WIDTH, label],
+    [
+      onBudgetChange,
+      CATEGORY_WIDTH,
+      OTHER_COLUMNS_WIDTH,
+      label,
+      transactionsByCategory,
+      categories,
+    ],
   );
 
   // Table state and filtering
@@ -292,83 +339,82 @@ export function BudgetCategoryTable({
   });
 
   // Totals
-  const totalBudgeted = data.reduce((acc, row) => acc + (row.budgeted ?? 0), 0);
-  const totalActivity = data.reduce((acc, row) => acc + (row.activity ?? 0), 0);
-  const totalAvailable = data.reduce(
-    (acc, row) => acc + (row.available ?? 0),
-    0,
-  );
+  const totalBudgeted = data.reduce((acc, row) => acc + row.budgeted, 0);
+  const totalActivity = data.reduce((acc, row) => acc + row.activity, 0);
+  const totalAvailable = data.reduce((acc, row) => acc + row.available, 0);
 
   return (
-    <div className="py-4 lg:py-8">
-      <div className="rounded-md border">
-        <Table style={{ tableLayout: "fixed" }}>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    style={{ width: `${header.getSize()}px` }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      style={{ width: `${cell.column.getSize()}px` }}
+    <>
+      <div className="py-4 lg:py-8">
+        <div className="rounded-md border">
+          <Table style={{ tableLayout: "fixed" }}>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }}
                     >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        style={{ width: `${cell.column.getSize()}px` }}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    Uh ho no hay resultados aun...
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+            <TableFooter>
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  Uh ho no hay resultados aun...
+                <TableCell className="pl-6">Totales</TableCell>
+                <TableCell className="pl-5">
+                  {formatCurrency(totalBudgeted)}
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatCurrency(totalActivity)}
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatCurrency(totalAvailable)}
                 </TableCell>
               </TableRow>
-            )}
-          </TableBody>
-          <TableFooter>
-            <TableRow>
-              <TableCell className="pl-6">Totales</TableCell>
-              <TableCell className="pl-5">
-                {formatCurrency(totalBudgeted)}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(totalActivity)}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(totalAvailable)}
-              </TableCell>
-            </TableRow>
-          </TableFooter>
-        </Table>
+            </TableFooter>
+          </Table>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
