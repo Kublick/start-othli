@@ -50,44 +50,6 @@ interface BudgetCategoryTableProps {
   onBudgetChange: (categoryId: number, value: number) => void | Promise<void>;
 }
 
-function BudgetInput({
-  value,
-  onChange,
-  onBlur,
-  onKeyDown,
-  disabled,
-}: {
-  value: string | number;
-  onChange: (value: string) => void;
-  onBlur: React.FocusEventHandler<HTMLInputElement>;
-  onKeyDown: React.KeyboardEventHandler<HTMLInputElement>;
-  disabled?: boolean;
-}) {
-  const [isFocused, setIsFocused] = useState(false);
-
-  return (
-    <Input
-      type="text"
-      value={
-        isFocused ? value : value !== "" ? formatCurrency(Number(value)) : ""
-      }
-      onChange={(e) =>
-        onChange(
-          e.target.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"),
-        )
-      }
-      onFocus={() => setIsFocused(true)}
-      onBlur={(e) => {
-        setIsFocused(false);
-        onBlur(e);
-      }}
-      onKeyDown={onKeyDown}
-      className="w-28 text-right tabular-nums"
-      disabled={disabled}
-    />
-  );
-}
-
 function ExpectedCell({
   info,
   onBudgetChange,
@@ -95,7 +57,7 @@ function ExpectedCell({
   info: CellContext<BudgetRow, number>;
   onBudgetChange: (categoryId: number, value: number) => void | Promise<void>;
 }) {
-  const rowId = info.row.original.id;
+  const rowId = String(info.row.original.id);
   const initialValue = info.getValue();
   const [value, setValue] = useState<string>(
     info.row.original.budgeted?.toString() ?? "",
@@ -116,10 +78,9 @@ function ExpectedCell({
     if (value !== originalValue) {
       setLoading(true);
       try {
-        await onBudgetChange(rowId, +value);
+        await onBudgetChange(Number(rowId), +value);
         setOriginalValue(value);
       } catch (e) {
-        console.error(e);
         setValue(originalValue);
       } finally {
         setLoading(false);
@@ -142,16 +103,107 @@ function ExpectedCell({
 
   return (
     <div className="flex items-center gap-2">
-      <BudgetInput
+      <Input
         value={value}
-        onChange={handleChange}
+        onChange={(e) => handleChange(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
+        className="w-28 text-right tabular-nums"
         disabled={loading}
       />
     </div>
   );
 }
+
+const TABLE_WIDTH = 1000;
+const CATEGORY_WIDTH = Math.floor(TABLE_WIDTH * 0.55);
+const OTHER_COLUMNS_WIDTH = Math.floor((TABLE_WIDTH - CATEGORY_WIDTH) / 3);
+
+export const budgetTableColumns: (
+  onBudgetChange: BudgetCategoryTableProps["onBudgetChange"],
+  transactionsByCategory: Map<number, Transaction[]>,
+  categories: Category[],
+) => ColumnDef<BudgetRow, number | string>[] = (
+  onBudgetChange,
+  transactionsByCategory,
+  categories,
+) => [
+  {
+    id: "categoryName",
+    accessorKey: "name",
+    header: () => (
+      <div className="pl-4 text-left font-semibold uppercase tracking-wider">
+        Gastos
+      </div>
+    ),
+    cell: (info) => (
+      <div className="pl-4 font-medium ">{info.getValue<string>()}</div>
+    ),
+    size: CATEGORY_WIDTH,
+  },
+  {
+    accessorKey: "budgeted",
+    header: () => (
+      <div className="flex items-center gap-2 font-semibold uppercase tracking-wider hover:text-black">
+        Presupuestado
+      </div>
+    ),
+    cell: (info) => (
+      <ExpectedCell info={info} onBudgetChange={onBudgetChange} />
+    ),
+    size: OTHER_COLUMNS_WIDTH,
+  },
+  {
+    accessorKey: "activity",
+    header: () => (
+      <div className="text-right font-semibold uppercase tracking-wider">
+        Actividad
+      </div>
+    ),
+    cell: (info) => {
+      const value = info.getValue<number>();
+      const categoryId = info.row.original.id;
+      const categoryTransactions = transactionsByCategory.get(categoryId) || [];
+      const category = categories.find((c) => c.id === categoryId);
+      return (
+        <div className="relative flex items-center">
+          {categoryTransactions.length > 0 && (
+            <div className="absolute left-0">
+              <TransactionsDialog
+                id={categoryId.toString()}
+                transactions={categoryTransactions}
+                category={category || null}
+              />
+            </div>
+          )}
+          <div className="w-full text-right">{formatCurrency(value)}</div>
+        </div>
+      );
+    },
+    size: OTHER_COLUMNS_WIDTH,
+  },
+  {
+    accessorKey: "available",
+    header: () => (
+      <div className="flex items-center justify-end gap-2 text-right font-semibold uppercase tracking-wider hover:text-black">
+        Disponible
+      </div>
+    ),
+    cell: (info) => {
+      const budgetableAmount = info.getValue<number>();
+      let textColor = "";
+      if (budgetableAmount > 0) textColor = "text-green-700 font-bold";
+      else if (budgetableAmount < 0) textColor = "text-red-700 font-bold";
+      else if (budgetableAmount === 0) textColor = "";
+      return (
+        <div className="w-full text-right">
+          <span className={textColor}>{formatCurrency(budgetableAmount)}</span>
+        </div>
+      );
+    },
+    size: OTHER_COLUMNS_WIDTH,
+  },
+];
 
 export function BudgetCategoryTable({
   type,
@@ -173,7 +225,7 @@ export function BudgetCategoryTable({
   const transactionsByCategory = React.useMemo(() => {
     const map = new Map<number, Transaction[]>();
     transactions.forEach((transaction) => {
-      const categoryId = transaction.categoryId ?? 0; // Assuming 0 as a default or placeholder value if categoryId is null
+      const categoryId = transaction.categoryId ?? 0;
       if (!map.has(categoryId)) {
         map.set(categoryId, []);
       }
@@ -191,7 +243,6 @@ export function BudgetCategoryTable({
       filteredCategories.map((cat) => {
         let activity = 0;
         const categoryTransactions = transactionsByCategory.get(cat.id) || [];
-
         if (type === "income") {
           activity = categoryTransactions.reduce((sum, t) => {
             const amt = Number.parseFloat(t.amount);
@@ -217,107 +268,6 @@ export function BudgetCategoryTable({
     [filteredCategories, transactionsByCategory, budgets, type],
   );
 
-  // Column sizing
-  const TABLE_WIDTH = 1000;
-  const CATEGORY_WIDTH = Math.floor(TABLE_WIDTH * 0.55);
-  const OTHER_COLUMNS_WIDTH = Math.floor((TABLE_WIDTH - CATEGORY_WIDTH) / 3);
-
-  const label = type === "income" ? "Ingresos" : "Gastos";
-
-  const columns = React.useMemo<ColumnDef<BudgetRow, number | string>[]>(
-    () => [
-      {
-        id: "categoryName",
-        accessorKey: "name",
-        header: () => (
-          <div className="pl-4 text-left font-semibold uppercase tracking-wider">
-            {label}
-          </div>
-        ),
-        cell: (info) => (
-          <div className="pl-4 font-medium ">{info.getValue<string>()}</div>
-        ),
-        size: CATEGORY_WIDTH,
-      },
-      {
-        accessorKey: "budgeted",
-        header: () => (
-          <div className="flex items-center gap-2 font-semibold uppercase tracking-wider hover:text-black">
-            Presupuestado
-          </div>
-        ),
-        cell: (info) => (
-          <ExpectedCell info={info} onBudgetChange={onBudgetChange} />
-        ),
-        size: OTHER_COLUMNS_WIDTH,
-      },
-      {
-        accessorKey: "activity",
-        header: () => (
-          <div className="text-right font-semibold uppercase tracking-wider">
-            Actividad
-          </div>
-        ),
-        cell: (info) => {
-          const value = info.getValue<number>();
-          const categoryId = info.row.original.id;
-          const categoryTransactions =
-            transactionsByCategory.get(categoryId) || [];
-          const category = categories.find((c) => c.id === categoryId);
-
-          return (
-            <div className="relative flex items-center">
-              {categoryTransactions.length > 0 && (
-                <div className="absolute left-0">
-                  <TransactionsDialog
-                    id={categoryId.toString()}
-                    transactions={categoryTransactions}
-                    category={category || null}
-                  />
-                </div>
-              )}
-              <div className="w-full text-right">{formatCurrency(value)}</div>
-            </div>
-          );
-        },
-        size: OTHER_COLUMNS_WIDTH,
-      },
-      {
-        accessorKey: "available",
-        header: () => (
-          <div className="flex items-center justify-end gap-2 text-right font-semibold uppercase tracking-wider hover:text-black">
-            Disponible
-          </div>
-        ),
-        cell: (info) => {
-          const budgetableAmount = info.getValue<number>();
-          let textColor = "";
-          if (budgetableAmount > 0) textColor = "text-green-700 font-bold";
-          else if (budgetableAmount < 0) textColor = "text-red-700 font-bold";
-          else if (budgetableAmount === 0) textColor = "";
-
-          return (
-            <div className="w-full text-right">
-              <span className={textColor}>
-                {formatCurrency(budgetableAmount)}
-              </span>
-            </div>
-          );
-        },
-        size: OTHER_COLUMNS_WIDTH,
-      },
-    ],
-    [
-      onBudgetChange,
-      CATEGORY_WIDTH,
-      OTHER_COLUMNS_WIDTH,
-      label,
-      transactionsByCategory,
-      categories,
-    ],
-  );
-
-  // Table state and filtering
   const [tableData, setTableData] = useState<BudgetRow[]>([]);
   const [filtering, setFiltering] = useState("");
 
@@ -327,7 +277,11 @@ export function BudgetCategoryTable({
 
   const table = useReactTable({
     data: tableData,
-    columns,
+    columns: budgetTableColumns(
+      onBudgetChange,
+      transactionsByCategory,
+      categories,
+    ),
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => `${row.id}`,
     getFilteredRowModel: getFilteredRowModel(),
@@ -390,7 +344,7 @@ export function BudgetCategoryTable({
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={columns.length}
+                    colSpan={table.getAllColumns().length}
                     className="h-24 text-center"
                   >
                     Uh ho no hay resultados aun...

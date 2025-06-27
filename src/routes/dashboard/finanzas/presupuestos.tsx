@@ -71,11 +71,6 @@ function RouteComponent() {
             Establece tu presupuesto mensual para cada categoría. La actividad
             se calcula automáticamente según tus transacciones del mes.
           </p>
-          {Object.keys(backendBudgets).length > 0 && (
-            <p className="mt-2 text-green-600 text-sm">
-              ✓ Presupuestos cargados desde el servidor
-            </p>
-          )}
           {updateBudgetMutation.isPending && (
             <p className="mt-2 text-blue-600 text-sm">Guardando cambios...</p>
           )}
