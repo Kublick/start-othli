@@ -21,7 +21,8 @@
       "!**/.vercel",
       "!**/.sst",
       "!**/sst-env.d.ts",
-      "!**/locales/**/*.js"
+      "!**/locales/**/*.js",
+      "!**/drizzle/**"
     ]
   },
   "formatter": {

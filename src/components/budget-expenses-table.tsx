@@ -82,6 +82,7 @@ function ExpectedCell({
         setOriginalValue(value);
       } catch (e) {
         setValue(originalValue);
+        console.log(e);
       } finally {
         setLoading(false);
       }

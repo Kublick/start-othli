@@ -128,7 +128,13 @@ export default function DashboardLayout({
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link to="/dashboard/finanzas/transacciones">
+                        <Link
+                          to="/dashboard/finanzas/transacciones"
+                          search={{
+                            year: "2025",
+                            month: "06",
+                          }}
+                        >
                           <Receipt className="h-4 w-4" />
                           <span>Transacciones</span>
                         </Link>
