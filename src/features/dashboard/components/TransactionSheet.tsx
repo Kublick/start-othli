@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CategoryCombobox } from "@/components/ui/category-combobox";
 import {
@@ -73,10 +73,15 @@ export function TransactionSheet({
   saveLoading,
 }: TransactionSheetProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
+
+  useEffect(() => {
+    if (!open) setActiveTab("details");
+  }, [open]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[400px] sm:w-[540px]">
+      <SheetContent className="flex h-screen max-h-screen w-[400px] flex-col sm:w-[540px]">
         <SheetHeader>
           <SheetTitle>
             {editingTransaction ? "Editar Transacción" : "Nueva Transacción"}
@@ -88,7 +93,12 @@ export function TransactionSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <Tabs defaultValue="details" className="w-full">
+        <Tabs
+          defaultValue="details"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex min-h-0 w-full flex-1 flex-col"
+        >
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="details">Detalles</TabsTrigger>
             {editingTransaction && (
@@ -210,7 +220,10 @@ export function TransactionSheet({
           </TabsContent>
 
           {editingTransaction && (
-            <TabsContent value="history" className="px-4 py-6">
+            <TabsContent
+              value="history"
+              className="flex min-h-0 flex-1 flex-col px-4 py-6"
+            >
               <TransactionHistory
                 transactionId={editingTransaction.id}
                 transactionDescription={editingTransaction.description}
@@ -222,52 +235,58 @@ export function TransactionSheet({
           )}
         </Tabs>
 
-        <SheetFooter>
-          <div className="flex w-full flex-col gap-2 ">
-            {editingTransaction && (
-              <Dialog
-                open={isDeleteDialogOpen}
-                onOpenChange={setIsDeleteDialogOpen}
-              >
-                <Button
-                  variant="destructive"
-                  type="button"
-                  className="w-full"
-                  onClick={() => setIsDeleteDialogOpen(true)}
+        {activeTab === "details" && (
+          <SheetFooter>
+            <div className="flex w-full flex-col gap-2 ">
+              {editingTransaction && (
+                <Dialog
+                  open={isDeleteDialogOpen}
+                  onOpenChange={setIsDeleteDialogOpen}
                 >
-                  Borrar Transacción
-                </Button>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>¿Borrar transacción?</DialogTitle>
-                    <DialogDescription>
-                      Esta acción no se puede deshacer. ¿Estás seguro de que
-                      deseas borrar esta transacción?
-                    </DialogDescription>
-                  </DialogHeader>
-                  <DialogFooterUI className="flex w-full gap-2">
-                    <DialogClose asChild>
-                      <Button className="w-1/2" variant="outline">
-                        Cancelar
+                  <Button
+                    variant="destructive"
+                    type="button"
+                    className="w-full"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    Borrar Transacción
+                  </Button>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>¿Borrar transacción?</DialogTitle>
+                      <DialogDescription>
+                        Esta acción no se puede deshacer. ¿Estás seguro de que
+                        deseas borrar esta transacción?
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooterUI className="flex w-full gap-2">
+                      <DialogClose asChild>
+                        <Button className="w-1/2" variant="outline">
+                          Cancelar
+                        </Button>
+                      </DialogClose>
+                      <Button
+                        className="w-1/2"
+                        variant="destructive"
+                        onClick={onDelete}
+                        disabled={deleteStatus === "pending"}
+                      >
+                        {deleteStatus === "pending" ? "Borrando..." : "Borrar"}
                       </Button>
-                    </DialogClose>
-                    <Button
-                      className="w-1/2"
-                      variant="destructive"
-                      onClick={onDelete}
-                      disabled={deleteStatus === "pending"}
-                    >
-                      {deleteStatus === "pending" ? "Borrando..." : "Borrar"}
-                    </Button>
-                  </DialogFooterUI>
-                </DialogContent>
-              </Dialog>
-            )}
-            <Button className="w-full" onClick={onSave} disabled={saveLoading}>
-              {editingTransaction ? "Actualizar" : "Crear"} Transacción
-            </Button>
-          </div>
-        </SheetFooter>
+                    </DialogFooterUI>
+                  </DialogContent>
+                </Dialog>
+              )}
+              <Button
+                className="w-full"
+                onClick={onSave}
+                disabled={saveLoading}
+              >
+                {editingTransaction ? "Actualizar" : "Crear"} Transacción
+              </Button>
+            </div>
+          </SheetFooter>
+        )}
       </SheetContent>
     </Sheet>
   );

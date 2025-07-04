@@ -4,14 +4,7 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 
-import {
-  ArrowDown,
-  ArrowLeftRight,
-  ArrowUp,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/dashboard-layout";
@@ -35,7 +28,8 @@ import {
   useUpdateTransaction,
 } from "@/features/dashboard/api/transactions";
 import { TransactionSheet } from "@/features/dashboard/components/TransactionSheet";
-import { TransactionTable } from "@/features/dashboard/components/TransactionTable";
+
+import { TransactionTableTanstack } from "@/features/dashboard/components/TransactionTableTanstack";
 
 export const Route = createFileRoute("/dashboard/finanzas/transacciones")({
   component: RouteComponent,
@@ -239,17 +233,6 @@ function RouteComponent() {
     }
   };
 
-  const getTransactionIcon = (type: Transaction["type"]) => {
-    switch (type) {
-      case "income":
-        return <ArrowUp className="h-4 w-4 text-green-600" />;
-      case "expense":
-        return <ArrowDown className="h-4 w-4 text-red-600" />;
-      case "transfer":
-        return <ArrowLeftRight className="h-4 w-4 text-blue-600" />;
-    }
-  };
-
   if (isLoading) {
     return (
       <DashboardLayout title="Transacciones">
@@ -323,31 +306,37 @@ function RouteComponent() {
                 </Button>
               </div>
             ) : (
-              <TransactionTable
-                transactions={transactions}
-                accounts={accounts}
-                categories={categories}
-                payees={payees}
-                updateTransactionMutation={updateTransactionMutation}
-                createPayee={async (name) => {
-                  await createPayee(name);
-                }}
-                createCategory={async (name) => {
-                  await createCategory({
-                    categories: [
-                      {
-                        name,
-                        description: "",
-                        isIncome: false,
-                        excludeFromBudget: false,
-                        excludeFromTotals: false,
-                      },
-                    ],
-                  });
-                }}
-                handleEditTransaction={handleEditTransaction}
-                getTransactionIcon={getTransactionIcon}
-              />
+              <>
+                <TransactionTableTanstack
+                  transactions={transactions}
+                  onOpenTransactionSheet={handleEditTransaction}
+                />
+                {/* <TransactionTable
+                  transactions={transactions}
+                  accounts={accounts}
+                  categories={categories}
+                  payees={payees}
+                  updateTransactionMutation={updateTransactionMutation}
+                  createPayee={async (name) => {
+                    await createPayee(name);
+                  }}
+                  createCategory={async (name) => {
+                    await createCategory({
+                      categories: [
+                        {
+                          name,
+                          description: "",
+                          isIncome: false,
+                          excludeFromBudget: false,
+                          excludeFromTotals: false,
+                        },
+                      ],
+                    });
+                  }}
+                  handleEditTransaction={handleEditTransaction}
+                  getTransactionIcon={getTransactionIcon}
+                /> */}
+              </>
             )}
           </CardContent>
         </Card>

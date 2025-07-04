@@ -140,7 +140,7 @@ export function TransactionHistory({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex min-h-0 flex-1 flex-col space-y-4">
       <div className="flex items-center gap-2">
         <Clock className="h-4 w-4" />
         <h3 className="font-medium">Historial de Cambios</h3>
@@ -150,7 +150,7 @@ export function TransactionHistory({
           No hay historial de cambios disponible.
         </div>
       ) : (
-        <ScrollArea className="max-h-[400px]">
+        <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-4">
             {history.map((entry, index) => (
               <Card
