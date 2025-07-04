@@ -1,3 +1,4 @@
+import type { UseMutationResult } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon2, ChevronRight, User } from "lucide-react";
 import type React from "react";
@@ -31,7 +32,10 @@ import {
 import type { Account } from "@/features/dashboard/api/accounts";
 import type { Category } from "@/features/dashboard/api/categories";
 import type { Payee } from "@/features/dashboard/api/payees";
-import type { Transaction } from "@/features/dashboard/api/transactions";
+import type {
+  Transaction,
+  UpdateTransactionData,
+} from "@/features/dashboard/api/transactions";
 import {
   transactionTypeColors,
   transactionTypeLabels,
@@ -42,7 +46,12 @@ function EditableDateCell({
   updateTransactionMutation,
 }: {
   transaction: Transaction;
-  updateTransactionMutation: any;
+  updateTransactionMutation: UseMutationResult<
+    Transaction,
+    Error,
+    UpdateTransactionData,
+    unknown
+  >;
 }) {
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date(transaction.date));
@@ -81,10 +90,58 @@ function EditableDateCell({
           mode="single"
           selected={selectedDate}
           onSelect={handleDateChange}
-          initialFocus
         />
       </PopoverContent>
     </Popover>
+  );
+}
+
+function InlineAmountInput({
+  transaction,
+  updateTransactionMutation,
+}: {
+  transaction: Transaction;
+  updateTransactionMutation: UseMutationResult<
+    Transaction,
+    Error,
+    UpdateTransactionData,
+    unknown
+  >;
+}) {
+  const [amountInput, setAmountInput] = useState(transaction.amount);
+  const [originalAmount, setOriginalAmount] = useState(transaction.amount);
+
+  const handleBlur = async () => {
+    if (amountInput !== originalAmount) {
+      await updateTransactionMutation.mutateAsync({
+        ...transaction,
+        amount: amountInput,
+        notes: transaction.notes ?? undefined,
+        userAccountId: transaction.userAccountId ?? "",
+        categoryId: transaction.categoryId ?? undefined,
+        payeeId: transaction.payeeId ?? undefined,
+        transferAccountId: transaction.transferAccountId ?? undefined,
+      });
+      setOriginalAmount(amountInput);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      (e.target as HTMLInputElement).blur();
+    } else if (e.key === "Escape") {
+      setAmountInput(originalAmount);
+    }
+  };
+
+  return (
+    <Input
+      value={amountInput}
+      onChange={(e) => setAmountInput(e.target.value)}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      className="w-full text-right"
+    />
   );
 }
 
@@ -103,7 +160,12 @@ export function TransactionTable({
   accounts: Account[];
   categories: Category[];
   payees: Payee[];
-  updateTransactionMutation: any;
+  updateTransactionMutation: UseMutationResult<
+    Transaction,
+    Error,
+    UpdateTransactionData,
+    unknown
+  >;
   createPayee: (name: string) => Promise<void>;
   createCategory: (name: string) => Promise<void>;
   handleEditTransaction: (transaction: Transaction) => void;
@@ -213,43 +275,9 @@ export function TransactionTable({
               </Badge>
             </TableCell>
             <TableCell className="w-20 min-w-[64px] text-center font-mono">
-              <Input
-                type="number"
-                step="0.01"
-                value={transaction.amount}
-                onChange={async (e) => {
-                  const newAmount = e.target.value;
-                  if (
-                    newAmount !== "" &&
-                    !Number.isNaN(Number.parseFloat(newAmount))
-                  ) {
-                    await updateTransactionMutation.mutateAsync({
-                      ...transaction,
-                      amount: newAmount,
-                      notes: transaction.notes ?? undefined,
-                      userAccountId: transaction.userAccountId ?? "",
-                      categoryId: transaction.categoryId ?? undefined,
-                      payeeId: transaction.payeeId ?? undefined,
-                      transferAccountId:
-                        transaction.transferAccountId ?? undefined,
-                    });
-                  }
-                }}
-                onBlur={async (e) => {
-                  const newAmount = e.target.value;
-                  if (
-                    newAmount === "" ||
-                    Number.isNaN(Number.parseFloat(newAmount))
-                  ) {
-                    e.target.value = transaction.amount;
-                  }
-                }}
-                className={`w-full text-right font-mono ${
-                  Number.parseFloat(transaction.amount) < 0
-                    ? "text-red-600"
-                    : ""
-                }`}
-                placeholder="0.00"
+              <InlineAmountInput
+                transaction={transaction}
+                updateTransactionMutation={updateTransactionMutation}
               />
             </TableCell>
             <TableCell className="w-32 min-w-[120px] text-center">

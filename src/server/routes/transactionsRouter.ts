@@ -1,8 +1,24 @@
 import { and, desc, eq, gte, like, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "@/db";
-import { transaction } from "@/db/schema";
+import { transaction, transactionHistory } from "@/db/schema";
 import type { Context } from "../context";
+
+// Helper function to record transaction history
+const recordTransactionHistory = async (
+  transactionId: string,
+  userId: string,
+  action: "created" | "updated" | "deleted",
+  details: Record<string, unknown>,
+) => {
+  await db.insert(transactionHistory).values({
+    transactionId,
+    userId,
+    action,
+    details,
+    timestamp: new Date(),
+  });
+};
 
 // Router for managing transactions
 const transactionsRouter = new Hono<{ Variables: Context }>()
@@ -161,10 +177,12 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         );
       }
 
+      const transactionId = `txn_${user.id}_${Date.now()}_${Math.random()}`;
+
       const [createdTransaction] = await db
         .insert(transaction)
         .values({
-          id: `txn_${user.id}_${Date.now()}_${Math.random()}`,
+          id: transactionId,
           description: transactionData.description,
           amount: transactionData.amount,
           type: transactionData.type,
@@ -181,6 +199,18 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
           updatedAt: new Date(),
         })
         .returning();
+
+      // Record transaction history
+      await recordTransactionHistory(transactionId, user.id, "created", {
+        description: transactionData.description,
+        amount: transactionData.amount,
+        type: transactionData.type,
+        currency: transactionData.currency || "USD",
+        date: transactionData.date,
+        userAccountId: transactionData.userAccountId,
+        categoryId: transactionData.categoryId,
+        payeeId: transactionData.payeeId,
+      });
 
       return c.json({
         success: true,
@@ -281,6 +311,54 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         );
       }
 
+      // Record changes for history
+      const changes: Record<string, { from: unknown; to: unknown }> = {};
+
+      if (existingTransaction.description !== description) {
+        changes.description = {
+          from: existingTransaction.description ?? "",
+          to: description ?? "",
+        };
+      }
+      if (existingTransaction.amount !== amount) {
+        changes.amount = {
+          from: existingTransaction.amount ?? "",
+          to: amount ?? "",
+        };
+      }
+      if (existingTransaction.type !== type) {
+        changes.type = {
+          from: existingTransaction.type ?? "",
+          to: type ?? "",
+        };
+      }
+      if (
+        existingTransaction.date.toISOString() !== new Date(date).toISOString()
+      ) {
+        changes.date = {
+          from: existingTransaction.date?.toISOString() ?? "",
+          to: new Date(date).toISOString() ?? "",
+        };
+      }
+      if (existingTransaction.userAccountId !== userAccountId) {
+        changes.userAccountId = {
+          from: existingTransaction.userAccountId ?? "",
+          to: userAccountId ?? "",
+        };
+      }
+      if (existingTransaction.categoryId !== (categoryId || null)) {
+        changes.categoryId = {
+          from: existingTransaction.categoryId ?? "",
+          to: categoryId ?? "",
+        };
+      }
+      if (existingTransaction.payeeId !== (payeeId || null)) {
+        changes.payeeId = {
+          from: existingTransaction.payeeId ?? "",
+          to: payeeId ?? "",
+        };
+      }
+
       const [updatedTransaction] = await db
         .update(transaction)
         .set({
@@ -299,6 +377,31 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         })
         .where(eq(transaction.id, id))
         .returning();
+
+      // Record transaction history if there were changes
+      if (Object.keys(changes).length > 0) {
+        await recordTransactionHistory(id, user.id, "updated", {
+          changes,
+          previousValues: {
+            description: existingTransaction.description,
+            amount: existingTransaction.amount,
+            type: existingTransaction.type,
+            date: existingTransaction.date,
+            userAccountId: existingTransaction.userAccountId,
+            categoryId: existingTransaction.categoryId,
+            payeeId: existingTransaction.payeeId,
+          },
+          newValues: {
+            description,
+            amount,
+            type,
+            date: new Date(date),
+            userAccountId,
+            categoryId: categoryId || null,
+            payeeId: payeeId || null,
+          },
+        });
+      }
 
       return c.json({
         success: true,
@@ -355,6 +458,18 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         );
       }
 
+      // Record transaction history before deletion
+      await recordTransactionHistory(id, user.id, "deleted", {
+        description: existingTransaction.description,
+        amount: existingTransaction.amount,
+        type: existingTransaction.type,
+        currency: existingTransaction.currency,
+        date: existingTransaction.date,
+        userAccountId: existingTransaction.userAccountId,
+        categoryId: existingTransaction.categoryId,
+        payeeId: existingTransaction.payeeId,
+      });
+
       await db.delete(transaction).where(eq(transaction.id, id));
 
       return c.json({
@@ -370,6 +485,45 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         },
         500,
       );
+    }
+  })
+  .get("/history/:transactionId", async (c) => {
+    try {
+      const user = c.get("user");
+
+      if (!user?.id) {
+        return c.json({ error: "Unauthorized" }, 401);
+      }
+
+      const transactionId = c.req.param("transactionId");
+
+      if (!transactionId) {
+        return c.json({ error: "Transaction ID is required" }, 400);
+      }
+
+      // Verify the transaction belongs to the user
+      const existingTransaction = await db.query.transaction.findFirst({
+        where: eq(transaction.id, transactionId),
+      });
+
+      if (!existingTransaction || existingTransaction.userId !== user.id) {
+        return c.json({ error: "Transaction not found" }, 404);
+      }
+
+      // Get transaction history
+      const history = await db
+        .select()
+        .from(transactionHistory)
+        .where(eq(transactionHistory.transactionId, transactionId))
+        .orderBy(desc(transactionHistory.timestamp));
+
+      return c.json({
+        success: true,
+        history,
+      });
+    } catch (error) {
+      console.error("Error fetching transaction history:", error);
+      return c.json({ error: "Internal server error" }, 500);
     }
   });
 

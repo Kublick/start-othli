@@ -28,6 +28,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { Account } from "@/features/dashboard/api/accounts";
 import type { Category } from "@/features/dashboard/api/categories";
@@ -36,6 +37,7 @@ import type {
   Transaction,
   TransactionFormData,
 } from "@/features/dashboard/api/transactions";
+import { TransactionHistory } from "./TransactionHistory";
 
 interface TransactionSheetProps {
   open: boolean;
@@ -85,115 +87,141 @@ export function TransactionSheet({
               : "Crea una nueva transacción"}
           </SheetDescription>
         </SheetHeader>
-        <div className="flex flex-col gap-4 px-4 py-6">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="payee">Beneficiario *</Label>
-            <PayeeCombobox
-              value={formData.payeeId ?? undefined}
-              payees={payees}
-              onChange={(payeeId) => setFormData({ ...formData, payeeId })}
-              onCreatePayee={createPayee}
-              placeholder="Selecciona o crea un beneficiario"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="category">Categoría</Label>
-            <CategoryCombobox
-              value={formData.categoryId ?? undefined}
-              categories={categories}
-              onChange={(categoryId) =>
-                setFormData({ ...formData, categoryId })
-              }
-              onCreateCategory={createCategory}
-              placeholder="Sin categoría"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="description">Descripción</Label>
-            <Input
-              id="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="Ej: Compra en supermercado, Pago de salario"
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="amount">Monto *</Label>
-            <Input
-              id="amount"
-              type="number"
-              step="0.01"
-              value={formData.amount}
-              onChange={(e) =>
-                setFormData({ ...formData, amount: e.target.value })
-              }
-              placeholder="0.00"
-            />
-          </div>
-          <div className="b flex flex-col gap-2 ">
-            <Label htmlFor="type">Tipo *</Label>
-            <Select
-              value={formData.type}
-              onValueChange={(value: "income" | "expense" | "transfer") =>
-                setFormData({ ...formData, type: value })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="expense">Gasto</SelectItem>
-                <SelectItem value="income">Ingreso</SelectItem>
-                <SelectItem value="transfer">Transferencia</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="date">Fecha *</Label>
-            <Input
-              id="date"
-              type="date"
-              value={formData.date}
-              onChange={(e) =>
-                setFormData({ ...formData, date: e.target.value })
-              }
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="account">Cuenta *</Label>
-            <Select
-              value={formData.userAccountId}
-              onValueChange={(value) =>
-                setFormData({ ...formData, userAccountId: value })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecciona una cuenta" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="notes">Notas</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-              placeholder="Notas adicionales sobre la transacción"
-              rows={3}
-            />
-          </div>
-        </div>
+
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="details">Detalles</TabsTrigger>
+            {editingTransaction && (
+              <TabsTrigger value="history">Historial</TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent
+            value="details"
+            className="flex flex-col gap-4 px-4 py-6"
+          >
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="payee">Beneficiario *</Label>
+              <PayeeCombobox
+                value={formData.payeeId ?? undefined}
+                payees={payees}
+                onChange={(payeeId) => setFormData({ ...formData, payeeId })}
+                onCreatePayee={createPayee}
+                placeholder="Selecciona o crea un beneficiario"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="category">Categoría</Label>
+              <CategoryCombobox
+                value={formData.categoryId ?? undefined}
+                categories={categories}
+                onChange={(categoryId) =>
+                  setFormData({ ...formData, categoryId })
+                }
+                onCreateCategory={createCategory}
+                placeholder="Sin categoría"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Input
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                placeholder="Ej: Compra en supermercado, Pago de salario"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="amount">Monto *</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) =>
+                  setFormData({ ...formData, amount: e.target.value })
+                }
+                placeholder="0.00"
+              />
+            </div>
+            <div className="b flex flex-col gap-2 ">
+              <Label htmlFor="type">Tipo *</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value: "income" | "expense" | "transfer") =>
+                  setFormData({ ...formData, type: value })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="expense">Gasto</SelectItem>
+                  <SelectItem value="income">Ingreso</SelectItem>
+                  <SelectItem value="transfer">Transferencia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="date">Fecha *</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="account">Cuenta *</Label>
+              <Select
+                value={formData.userAccountId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, userAccountId: value })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona una cuenta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="notes">Notas</Label>
+              <Textarea
+                id="notes"
+                value={formData.notes}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+                placeholder="Notas adicionales sobre la transacción"
+                rows={3}
+              />
+            </div>
+          </TabsContent>
+
+          {editingTransaction && (
+            <TabsContent value="history" className="px-4 py-6">
+              <TransactionHistory
+                transactionId={editingTransaction.id}
+                transactionDescription={editingTransaction.description}
+                accounts={accounts}
+                categories={categories}
+                payees={payees}
+              />
+            </TabsContent>
+          )}
+        </Tabs>
+
         <SheetFooter>
           <div className="flex w-full flex-col gap-2 ">
             {editingTransaction && (

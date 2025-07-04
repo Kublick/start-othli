@@ -48,6 +48,27 @@ export interface DeleteTransactionData {
   id: string;
 }
 
+export interface TransactionHistoryDetails {
+  description?: string;
+  amount?: string;
+  type?: "income" | "expense" | "transfer";
+  date?: string;
+  changes?: Record<string, { from: unknown; to: unknown }>;
+}
+
+export interface TransactionHistory {
+  id: number;
+  transactionId: string;
+  userId: string;
+  action: "created" | "updated" | "deleted";
+  details: TransactionHistoryDetails | null;
+  timestamp: string;
+}
+
+export interface TransactionHistoryResponse {
+  history: TransactionHistory[];
+}
+
 export interface TransactionFilters {
   startDate?: string;
   endDate?: string;
@@ -77,6 +98,9 @@ export const transactionKeys = {
     [...transactionKeys.lists(), { filters }] as const,
   details: () => [...transactionKeys.all, "detail"] as const,
   detail: (id: string) => [...transactionKeys.details(), id] as const,
+  history: () => [...transactionKeys.all, "history"] as const,
+  historyDetail: (transactionId: string) =>
+    [...transactionKeys.history(), transactionId] as const,
 };
 
 // Fetch transactions
@@ -154,6 +178,29 @@ const deleteTransaction = async (
   }
 };
 
+// Fetch transaction history
+const fetchTransactionHistory = async (
+  transactionId: string,
+): Promise<TransactionHistoryResponse> => {
+  const response = await client.api.transactions.history[":transactionId"].$get(
+    {
+      param: { transactionId },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch transaction history");
+  }
+  const data = await response.json();
+  const history = (data.history as TransactionHistory[]).map((item) => ({
+    ...item,
+    action: item.action as "created" | "updated" | "deleted",
+  }));
+  return {
+    history: history || [],
+  };
+};
+
 // Hooks
 export const useTransactions = (filters: TransactionFilters = {}) => {
   return useQuery({
@@ -185,8 +232,14 @@ export const useUpdateTransaction = () => {
 
   return useMutation({
     mutationFn: updateTransaction,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
+
+      if (data?.id) {
+        queryClient.invalidateQueries({
+          queryKey: transactionKeys.historyDetail(data.id),
+        });
+      }
       toast.success("Transacción actualizada exitosamente");
     },
     onError: (error) => {
@@ -209,6 +262,16 @@ export const useDeleteTransaction = () => {
       console.error("Error deleting transaction:", error);
       toast.error("Error al eliminar la transacción");
     },
+  });
+};
+
+export const useTransactionHistory = (transactionId: string) => {
+  return useQuery({
+    queryKey: transactionKeys.historyDetail(transactionId),
+    queryFn: () => fetchTransactionHistory(transactionId),
+    enabled: !!transactionId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
