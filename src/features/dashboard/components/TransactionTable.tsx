@@ -116,8 +116,8 @@ export function TransactionTable({
           <TableHead className="w-20 min-w-[64px] text-center">Fecha</TableHead>
           <TableHead className="w-48 min-w-[180px]">Beneficiario</TableHead>
           <TableHead className="w-32 min-w-[120px]">Categoría</TableHead>
-          <TableHead className="w-48 min-w-[180px]">Descripción</TableHead>
-          <TableHead className="w-24 min-w-[80px] text-center">Tipo</TableHead>
+          <TableHead className="w-64 min-w-[240px]">Descripción</TableHead>
+          <TableHead className="w-16 min-w-[60px] text-center">Tipo</TableHead>
           <TableHead className="w-20 min-w-[64px] text-center">Monto</TableHead>
           <TableHead className="w-32 min-w-[120px] text-center">
             Cuenta
@@ -176,7 +176,7 @@ export function TransactionTable({
                 placeholder="Sin categoría"
               />
             </TableCell>
-            <TableCell className="w-48 min-w-[180px] font-medium">
+            <TableCell className="w-64 min-w-[240px] font-medium">
               <div className="flex items-center gap-2">
                 {getTransactionIcon(transaction.type)}
                 <Input
@@ -207,7 +207,7 @@ export function TransactionTable({
                 />
               </div>
             </TableCell>
-            <TableCell className="w-24 min-w-[80px] text-center">
+            <TableCell className="w-16 min-w-[60px] text-center">
               <Badge className={transactionTypeColors[transaction.type]}>
                 {transactionTypeLabels[transaction.type]}
               </Badge>
