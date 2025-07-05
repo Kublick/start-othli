@@ -43,6 +43,12 @@ export default function DashboardLayout({
   title = "Dashboard",
 }: DashboardLayoutProps) {
   const { logout, user } = useAuthStore();
+
+  // Get current year and month for navigation links
+  const now = new Date();
+  const currentYear = String(now.getFullYear());
+  const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -120,7 +126,13 @@ export default function DashboardLayout({
                   <SidebarMenuSub>
                     <SidebarMenuSubItem>
                       <SidebarMenuSubButton asChild>
-                        <Link to="/dashboard/finanzas/presupuestos">
+                        <Link
+                          to="/dashboard/finanzas/presupuestos"
+                          search={{
+                            year: currentYear,
+                            month: currentMonth,
+                          }}
+                        >
                           <Target className="h-4 w-4" />
                           <span>Presupuesto</span>
                         </Link>
@@ -131,8 +143,8 @@ export default function DashboardLayout({
                         <Link
                           to="/dashboard/finanzas/transacciones"
                           search={{
-                            year: "2025",
-                            month: "06",
+                            year: currentYear,
+                            month: currentMonth,
                           }}
                         >
                           <Receipt className="h-4 w-4" />

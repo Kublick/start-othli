@@ -9,20 +9,38 @@ export interface BudgetData {
 export interface UpdateBudgetData {
   categoryId: number;
   amount: number;
+  year?: string;
+  month?: string;
+}
+
+export interface BudgetFilters {
+  year?: string;
+  month?: string;
 }
 
 // Query keys
 export const budgetKeys = {
   all: ["budgets"] as const,
   lists: () => [...budgetKeys.all, "list"] as const,
-  list: (filters: string) => [...budgetKeys.lists(), { filters }] as const,
+  list: (filters: BudgetFilters) =>
+    [...budgetKeys.lists(), { filters }] as const,
   details: () => [...budgetKeys.all, "detail"] as const,
   detail: (id: string) => [...budgetKeys.details(), id] as const,
 };
 
 // Fetch budgets
-const fetchBudgets = async (): Promise<BudgetData> => {
-  const response = await client.api.budgets.$get();
+const fetchBudgets = async (
+  filters: BudgetFilters = {},
+): Promise<BudgetData> => {
+  const params = new URLSearchParams();
+
+  if (filters.year) params.append("year", filters.year);
+  if (filters.month) params.append("month", filters.month);
+
+  const response = await client.api.budgets.$get({
+    query: Object.fromEntries(params),
+  });
+
   if (!response.ok) {
     throw new Error("Failed to fetch budgets");
   }
@@ -32,8 +50,17 @@ const fetchBudgets = async (): Promise<BudgetData> => {
 
 // Create/Update budget
 const updateBudget = async (data: UpdateBudgetData): Promise<void> => {
+  const params = new URLSearchParams();
+
+  if (data.year) params.append("year", data.year);
+  if (data.month) params.append("month", data.month);
+
   const response = await client.api.budgets.$post({
-    json: data,
+    query: Object.fromEntries(params),
+    json: {
+      categoryId: data.categoryId,
+      amount: data.amount,
+    },
   });
   if (!response.ok) {
     throw new Error("Failed to update budget");
@@ -51,10 +78,10 @@ const updateBudgetPut = async (data: UpdateBudgetData): Promise<void> => {
 };
 
 // Hooks
-export const useBudgets = () => {
+export const useBudgets = (filters: BudgetFilters = {}) => {
   return useQuery({
-    queryKey: budgetKeys.lists(),
-    queryFn: fetchBudgets,
+    queryKey: budgetKeys.list(filters),
+    queryFn: () => fetchBudgets(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

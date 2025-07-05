@@ -99,9 +99,6 @@ function ExpectedCell({
     }
   };
 
-  if (initialValue === 0 && value === "")
-    return <div className="text-right ">{formatCurrency(0)} </div>;
-
   return (
     <div className="flex items-center gap-2">
       <Input
@@ -111,6 +108,7 @@ function ExpectedCell({
         onKeyDown={handleKeyDown}
         className="w-28 text-right tabular-nums"
         disabled={loading}
+        placeholder={initialValue === 0 ? "0" : ""}
       />
     </div>
   );
@@ -124,7 +122,7 @@ export const budgetTableColumns: (
   onBudgetChange: BudgetCategoryTableProps["onBudgetChange"],
   transactionsByCategory: Map<number, Transaction[]>,
   categories: Category[],
-) => ColumnDef<BudgetRow, number | string>[] = (
+) => ColumnDef<BudgetRow>[] = (
   onBudgetChange,
   transactionsByCategory,
   categories,
@@ -150,7 +148,10 @@ export const budgetTableColumns: (
       </div>
     ),
     cell: (info) => (
-      <ExpectedCell info={info} onBudgetChange={onBudgetChange} />
+      <ExpectedCell
+        info={info as CellContext<BudgetRow, number>}
+        onBudgetChange={onBudgetChange}
+      />
     ),
     size: OTHER_COLUMNS_WIDTH,
   },
