@@ -53,7 +53,7 @@ function RouteComponent() {
     description: "",
     amount: "",
     type: "expense",
-    currency: "USD",
+    currency: "MXN",
     date: new Date().toISOString().split("T")[0],
     notes: "",
     userAccountId: "",

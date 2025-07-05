@@ -104,7 +104,7 @@ export const userAccount = pgTable("user_account", {
   balance: decimal("balance", { precision: 12, scale: 2 })
     .notNull()
     .default("0.00"),
-  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  currency: varchar("currency", { length: 3 }).notNull().default("MXN"),
   isActive: boolean("is_active").default(true).notNull(),
   userId: text("user_id")
     .notNull()
@@ -185,7 +185,7 @@ export const transaction = pgTable("transaction", {
   description: varchar("description", { length: 200 }).notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   type: transactionTypeEnum("type").notNull(),
-  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  currency: varchar("currency", { length: 3 }).notNull().default("MXN"),
   date: timestamp("date").notNull(),
   notes: text("notes"),
   userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
@@ -231,7 +231,7 @@ export const recurringTransaction = pgTable("recurring_transaction", {
   description: varchar("description", { length: 200 }).notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   type: transactionTypeEnum("type").notNull(),
-  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  currency: varchar("currency", { length: 3 }).notNull().default("MXN"),
   frequency: varchar("frequency", { length: 20 }).notNull(),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date"),
@@ -260,7 +260,7 @@ export const subscriptionPlan = pgTable("subscription_plan", {
   displayName: varchar("display_name", { length: 100 }).notNull(),
   description: text("description"),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  currency: varchar("currency", { length: 3 }).notNull().default("MXN"),
   billingInterval: varchar("billing_interval", { length: 20 }).notNull(),
   maxSeats: integer("max_seats").default(2).notNull(),
   features: json("features"),
@@ -352,7 +352,7 @@ export const budget = pgTable("budget", {
   description: text("description"),
   type: budgetTypeEnum("type").notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+  currency: varchar("currency", { length: 3 }).notNull().default("MXN"),
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
   isActive: boolean("is_active").default(true).notNull(),

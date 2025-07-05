@@ -194,7 +194,7 @@ function RouteComponent() {
     name: "",
     type: "debito",
     balance: "0.00",
-    currency: "USD",
+    currency: "MXN",
     institutionName: "",
     excludeTransactions: false,
   });
@@ -273,7 +273,7 @@ function RouteComponent() {
       name: "",
       type: "debito",
       balance: "0.00",
-      currency: "USD",
+      currency: "MXN",
       institutionName: "",
       excludeTransactions: false,
     });
@@ -571,7 +571,7 @@ function RouteComponent() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="MXN">MXN</SelectItem>
                       <SelectItem value="EUR">EUR</SelectItem>
                       <SelectItem value="MXN">MXN</SelectItem>
                       <SelectItem value="COP">COP</SelectItem>

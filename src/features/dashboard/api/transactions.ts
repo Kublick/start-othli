@@ -234,7 +234,6 @@ export const useUpdateTransaction = () => {
     mutationFn: updateTransaction,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
-
       if (data?.id) {
         queryClient.invalidateQueries({
           queryKey: transactionKeys.historyDetail(data.id),
@@ -328,7 +327,7 @@ export const transactionTypeIcons: Record<Transaction["type"], string> = {
 };
 
 // Utility functions
-export const formatAmount = (amount: string, currency = "USD") => {
+export const formatAmount = (amount: string, currency = "MXN") => {
   const numAmount = Number.parseFloat(amount);
   return new Intl.NumberFormat("es-ES", {
     style: "currency",

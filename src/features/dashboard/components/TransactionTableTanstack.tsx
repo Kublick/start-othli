@@ -21,8 +21,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
-import { useCategories } from "@/features/dashboard/api/categories";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  useActiveCategories,
+  useCreateCategories,
+} from "@/features/dashboard/api/categories";
 import type { Payee } from "@/features/dashboard/api/payees";
 import { usePayees } from "@/features/dashboard/api/payees";
 import type {
@@ -253,6 +263,71 @@ function PayeeCell({
   );
 }
 
+function CategoryCell({
+  transaction,
+  categories,
+  createCategory,
+  refetchCategories,
+  updateTransactionMutation,
+}: {
+  transaction: Transaction;
+  categories: { id: number; name: string }[];
+  createCategory: (name: string) => Promise<void>;
+  refetchCategories: () => Promise<{ data?: { id: number; name: string }[] }>;
+  updateTransactionMutation: UseMutationResult<
+    Transaction,
+    Error,
+    UpdateTransactionData,
+    unknown
+  >;
+}) {
+  const categoryOptions = categories.map((c) => ({
+    value: c.id.toString(),
+    label: c.name,
+  }));
+  const initialValue = transaction.categoryId
+    ? transaction.categoryId.toString()
+    : "";
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  const handleChange = async (newValue: string) => {
+    setValue(newValue); // Optimistically update UI
+    let categoryId = Number(newValue);
+    if (!categories.some((c) => c.id === categoryId)) {
+      await createCategory(newValue);
+      const updatedCategories = await refetchCategories();
+      const newCategory = updatedCategories.data?.find(
+        (c) => c.name.toLowerCase() === newValue.toLowerCase(),
+      );
+      if (newCategory) {
+        categoryId = newCategory.id;
+      }
+    }
+    updateTransactionMutation.mutate({
+      ...transaction,
+      categoryId: categoryId || undefined,
+      notes: transaction.notes ?? undefined,
+      userAccountId: transaction.userAccountId || "",
+      payeeId: transaction.payeeId ?? undefined,
+      transferAccountId: transaction.transferAccountId ?? undefined,
+    });
+  };
+
+  return (
+    <MyCombobox
+      options={categoryOptions}
+      value={value}
+      onChange={handleChange}
+      allowCreate
+      placeholder="Sin categoría"
+    />
+  );
+}
+
 export function TransactionTableTanstack({
   transactions = [],
   onOpenTransactionSheet,
@@ -260,8 +335,26 @@ export function TransactionTableTanstack({
 }: TransactionTableTanstackProps) {
   // Fetch data using hooks
 
-  const { data: categories = [], isLoading: categoriesLoading } =
-    useCategories();
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    refetch: refetchCategories,
+  } = useActiveCategories();
+  const { mutateAsync: createCategoryMutation } = useCreateCategories();
+
+  const createCategory = async (name: string) => {
+    await createCategoryMutation({
+      categories: [
+        {
+          name,
+          description: "",
+          isIncome: false,
+          excludeFromBudget: false,
+          excludeFromTotals: false,
+        },
+      ],
+    });
+  };
   const {
     data: payees = [],
     isLoading: payeesLoading,
@@ -285,6 +378,7 @@ export function TransactionTableTanstack({
     // Date column with calendar picker
     columnHelper.accessor("date", {
       header: "Fecha",
+      size: 60,
       cell: ({ row }) => {
         const transaction = row.original;
         const currentDate = transaction.date;
@@ -333,49 +427,22 @@ export function TransactionTableTanstack({
         );
       },
     }),
-    // Category column with select
+    // Category column with MyCombobox
     columnHelper.accessor("categoryId", {
       header: "Categoría",
-      cell: ({ row }) => {
-        const transaction = row.original;
-        const value = transaction.categoryId;
-
-        const handleChange = (newValue: number | null) => {
-          updateTransactionMutation.mutate({
-            id: transaction.id,
-            description: transaction.description,
-            amount: transaction.amount,
-            type: transaction.type,
-            currency: transaction.currency,
-            date: transaction.date,
-            notes: transaction.notes ?? undefined,
-            userAccountId: transaction.userAccountId || "",
-            categoryId: newValue ?? undefined,
-            payeeId: transaction.payeeId ?? undefined,
-            transferAccountId: transaction.transferAccountId ?? undefined,
-          });
-        };
-
-        return (
-          <select
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={value ?? ""}
-            onChange={(e) =>
-              handleChange(e.target.value ? Number(e.target.value) : null)
-            }
-          >
-            <option value="">Sin categoría</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        );
-      },
+      cell: ({ row }) => (
+        <CategoryCell
+          transaction={row.original}
+          categories={categories}
+          createCategory={createCategory}
+          refetchCategories={refetchCategories}
+          updateTransactionMutation={updateTransactionMutation}
+        />
+      ),
     }),
     // Payee column with MyCombobox
     columnHelper.accessor("payeeId", {
+      size: 300,
       header: "Beneficiario",
       cell: ({ row }) => (
         <PayeeCell
@@ -399,6 +466,7 @@ export function TransactionTableTanstack({
     }),
     // Amount column with inline editing
     columnHelper.accessor("amount", {
+      size: 90,
       header: "Monto",
       cell: ({ row }) => (
         <EditableAmount
@@ -411,6 +479,7 @@ export function TransactionTableTanstack({
     columnHelper.display({
       id: "actions",
       header: "",
+      size: 40,
       cell: ({ row }) => {
         const transaction = row.original;
         return (
@@ -470,41 +539,60 @@ export function TransactionTableTanstack({
 
       {/* Table */}
       <div className="rounded-md border">
-        <table className="w-full">
-          <thead>
+        <Table style={{ tableLayout: "fixed" }}>
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b bg-muted/50">
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    className="cursor-pointer p-3 text-left font-medium"
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                    {{
-                      asc: " 🔼",
-                      desc: " 🔽",
-                    }[header.column.getIsSorted() as string] ?? null}
-                  </th>
-                ))}
-              </tr>
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }} // Use the size from columnDef
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
             ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b hover:bg-muted/50">
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="p-3">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      key={cell.id}
+                      style={{ width: `${cell.column.getSize()}px` }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Uh ho no hay resultados aun...
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination Controls */}
