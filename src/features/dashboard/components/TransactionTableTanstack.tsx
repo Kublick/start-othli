@@ -1,3 +1,4 @@
+import type { UseMutationResult } from "@tanstack/react-query";
 import {
   createColumnHelper,
   flexRender,
@@ -11,28 +12,31 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, ChevronRight } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { MyCombobox } from "@/components/ui/my-combobox";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useAccounts } from "@/features/dashboard/api/accounts";
+
 import { useCategories } from "@/features/dashboard/api/categories";
+import type { Payee } from "@/features/dashboard/api/payees";
 import { usePayees } from "@/features/dashboard/api/payees";
 import type {
   Transaction,
   UpdateTransactionData,
 } from "@/features/dashboard/api/transactions";
 import { useUpdateTransaction } from "@/features/dashboard/api/transactions";
+import { cn } from "@/lib/utils";
 
 // Props interface for the component
 interface TransactionTableTanstackProps {
   transactions: Transaction[];
   onOpenTransactionSheet: (transaction: Transaction) => void;
+  createPayee: (name: string) => Promise<void>;
 }
 
 // Helper function to format currency
@@ -49,18 +53,13 @@ const formatCurrency = (amount: string, currency = "MXN") => {
 const formatDate = (dateString: string) => {
   try {
     const date = new Date(dateString);
-    return format(date, "dd MMM yyyy", { locale: es });
+    const formatted = format(date, "EEE MMM d", { locale: es });
+
+    return formatted.replace(/(^|\s)([a-z])/g, (match) => match.toUpperCase());
   } catch {
     return dateString;
   }
 };
-
-// Transaction type options
-const transactionTypeOptions = [
-  { value: "income", label: "Ingreso" },
-  { value: "expense", label: "Gasto" },
-  { value: "transfer", label: "Transferencia" },
-];
 
 // Editable cell components
 const EditableDescription = ({
@@ -189,15 +188,85 @@ const EditableAmount = ({
   );
 };
 
+function PayeeCell({
+  transaction,
+  payees,
+  createPayee,
+  refetchPayees,
+  updateTransactionMutation,
+}: {
+  transaction: Transaction;
+  payees: Payee[];
+  createPayee: (name: string) => Promise<void>;
+  refetchPayees: () => Promise<{ data?: Payee[] }>;
+  updateTransactionMutation: UseMutationResult<
+    Transaction,
+    Error,
+    UpdateTransactionData,
+    unknown
+  >;
+}) {
+  const payeeOptions = payees.map((p) => ({
+    value: p.id.toString(),
+    label: p.name,
+  }));
+  const initialValue = transaction.payeeId
+    ? transaction.payeeId.toString()
+    : "";
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
+
+  const handleChange = async (newValue: string) => {
+    setValue(newValue); // Optimistically update UI
+    let payeeId = Number(newValue);
+    if (!payees.some((p) => p.id === payeeId)) {
+      await createPayee(newValue);
+      const updatedPayees = await refetchPayees();
+      const newPayee = updatedPayees.data?.find(
+        (p) => p.name.toLowerCase() === newValue.toLowerCase(),
+      );
+      if (newPayee) {
+        payeeId = newPayee.id;
+      }
+    }
+    updateTransactionMutation.mutate({
+      ...transaction,
+      payeeId: payeeId || undefined,
+      notes: transaction.notes ?? undefined,
+      userAccountId: transaction.userAccountId || "",
+      categoryId: transaction.categoryId ?? undefined,
+      transferAccountId: transaction.transferAccountId ?? undefined,
+    });
+  };
+
+  return (
+    <MyCombobox
+      options={payeeOptions}
+      value={value}
+      onChange={handleChange}
+      allowCreate
+      placeholder="Selecciona o busca beneficiario"
+    />
+  );
+}
+
 export function TransactionTableTanstack({
   transactions = [],
   onOpenTransactionSheet,
+  createPayee,
 }: TransactionTableTanstackProps) {
   // Fetch data using hooks
-  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
+
   const { data: categories = [], isLoading: categoriesLoading } =
     useCategories();
-  const { data: payees = [], isLoading: payeesLoading } = usePayees();
+  const {
+    data: payees = [],
+    isLoading: payeesLoading,
+    refetch: refetchPayees,
+  } = usePayees();
 
   // Use mutation hooks
   const updateTransactionMutation = useUpdateTransaction();
@@ -230,12 +299,11 @@ export function TransactionTableTanstack({
               type: transaction.type,
               currency: transaction.currency,
               date: formattedDate,
-              notes: transaction.notes || undefined,
+              notes: transaction.notes ?? undefined,
               userAccountId: transaction.userAccountId || "",
-              categoryId: transaction.categoryId || undefined,
-              payeeId: transaction.payeeId || undefined,
-              isTransfer: transaction.isTransfer,
-              transferAccountId: transaction.transferAccountId || undefined,
+              categoryId: transaction.categoryId ?? undefined,
+              payeeId: transaction.payeeId ?? undefined,
+              transferAccountId: transaction.transferAccountId ?? undefined,
             });
           }
         };
@@ -244,8 +312,11 @@ export function TransactionTableTanstack({
           <Popover>
             <PopoverTrigger asChild>
               <Button
-                variant="outline"
-                className="h-8 w-full justify-start text-left font-normal"
+                variant="ghost"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !transaction && "text-muted-foreground",
+                )}
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 {currentDate ? formatDate(currentDate) : "Seleccionar fecha"}
@@ -262,112 +333,6 @@ export function TransactionTableTanstack({
         );
       },
     }),
-
-    // Description column with inline editing
-    columnHelper.accessor("description", {
-      header: "Descripción",
-      cell: ({ row }) => (
-        <EditableDescription
-          transaction={row.original}
-          onUpdate={(data) => updateTransactionMutation.mutate(data)}
-        />
-      ),
-    }),
-
-    // Amount column with inline editing
-    columnHelper.accessor("amount", {
-      header: "Monto",
-      cell: ({ row }) => (
-        <EditableAmount
-          transaction={row.original}
-          onUpdate={(data) => updateTransactionMutation.mutate(data)}
-        />
-      ),
-    }),
-
-    // Type column with select
-    columnHelper.accessor("type", {
-      header: "Tipo",
-      cell: ({ row }) => {
-        const transaction = row.original;
-        const value = transaction.type;
-
-        const handleChange = (newValue: Transaction["type"]) => {
-          updateTransactionMutation.mutate({
-            id: transaction.id,
-            description: transaction.description,
-            amount: transaction.amount,
-            type: newValue,
-            currency: transaction.currency,
-            date: transaction.date,
-            notes: transaction.notes || undefined,
-            userAccountId: transaction.userAccountId || "",
-            categoryId: transaction.categoryId || undefined,
-            payeeId: transaction.payeeId || undefined,
-            isTransfer: transaction.isTransfer,
-            transferAccountId: transaction.transferAccountId || undefined,
-          });
-        };
-
-        return (
-          <select
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={value}
-            onChange={(e) =>
-              handleChange(e.target.value as Transaction["type"])
-            }
-          >
-            {transactionTypeOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        );
-      },
-    }),
-
-    // Account column with select
-    columnHelper.accessor("userAccountId", {
-      header: "Cuenta",
-      cell: ({ row }) => {
-        const transaction = row.original;
-        const value = transaction.userAccountId;
-
-        const handleChange = (newValue: string) => {
-          updateTransactionMutation.mutate({
-            id: transaction.id,
-            description: transaction.description,
-            amount: transaction.amount,
-            type: transaction.type,
-            currency: transaction.currency,
-            date: transaction.date,
-            notes: transaction.notes || undefined,
-            userAccountId: newValue,
-            categoryId: transaction.categoryId || undefined,
-            payeeId: transaction.payeeId || undefined,
-            isTransfer: transaction.isTransfer,
-            transferAccountId: transaction.transferAccountId || undefined,
-          });
-        };
-
-        return (
-          <select
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={value || ""}
-            onChange={(e) => handleChange(e.target.value)}
-          >
-            <option value="">Sin cuenta</option>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.displayName || account.name}
-              </option>
-            ))}
-          </select>
-        );
-      },
-    }),
-
     // Category column with select
     columnHelper.accessor("categoryId", {
       header: "Categoría",
@@ -383,19 +348,18 @@ export function TransactionTableTanstack({
             type: transaction.type,
             currency: transaction.currency,
             date: transaction.date,
-            notes: transaction.notes || undefined,
+            notes: transaction.notes ?? undefined,
             userAccountId: transaction.userAccountId || "",
-            categoryId: newValue || undefined,
-            payeeId: transaction.payeeId || undefined,
-            isTransfer: transaction.isTransfer,
-            transferAccountId: transaction.transferAccountId || undefined,
+            categoryId: newValue ?? undefined,
+            payeeId: transaction.payeeId ?? undefined,
+            transferAccountId: transaction.transferAccountId ?? undefined,
           });
         };
 
         return (
           <select
             className="w-full rounded border px-2 py-1 text-sm"
-            value={value || ""}
+            value={value ?? ""}
             onChange={(e) =>
               handleChange(e.target.value ? Number(e.target.value) : null)
             }
@@ -410,57 +374,45 @@ export function TransactionTableTanstack({
         );
       },
     }),
-
-    // Payee column with select
+    // Payee column with MyCombobox
     columnHelper.accessor("payeeId", {
       header: "Beneficiario",
-      cell: ({ row }) => {
-        const transaction = row.original;
-        const value = transaction.payeeId;
-
-        const handleChange = (newValue: number | null) => {
-          updateTransactionMutation.mutate({
-            id: transaction.id,
-            description: transaction.description,
-            amount: transaction.amount,
-            type: transaction.type,
-            currency: transaction.currency,
-            date: transaction.date,
-            notes: transaction.notes || undefined,
-            userAccountId: transaction.userAccountId || "",
-            categoryId: transaction.categoryId || undefined,
-            payeeId: newValue || undefined,
-            isTransfer: transaction.isTransfer,
-            transferAccountId: transaction.transferAccountId || undefined,
-          });
-        };
-
-        return (
-          <select
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={value || ""}
-            onChange={(e) =>
-              handleChange(e.target.value ? Number(e.target.value) : null)
-            }
-          >
-            <option value="">Sin beneficiario</option>
-            {payees.map((payee) => (
-              <option key={payee.id} value={payee.id}>
-                {payee.name}
-              </option>
-            ))}
-          </select>
-        );
-      },
+      cell: ({ row }) => (
+        <PayeeCell
+          transaction={row.original}
+          payees={payees}
+          createPayee={createPayee}
+          refetchPayees={refetchPayees}
+          updateTransactionMutation={updateTransactionMutation}
+        />
+      ),
     }),
-
+    // Description column with inline editing
+    columnHelper.accessor("description", {
+      header: "Descripción",
+      cell: ({ row }) => (
+        <EditableDescription
+          transaction={row.original}
+          onUpdate={(data) => updateTransactionMutation.mutate(data)}
+        />
+      ),
+    }),
+    // Amount column with inline editing
+    columnHelper.accessor("amount", {
+      header: "Monto",
+      cell: ({ row }) => (
+        <EditableAmount
+          transaction={row.original}
+          onUpdate={(data) => updateTransactionMutation.mutate(data)}
+        />
+      ),
+    }),
     // Actions column
     columnHelper.display({
       id: "actions",
       header: "",
       cell: ({ row }) => {
         const transaction = row.original;
-
         return (
           <Button
             variant="ghost"
@@ -493,7 +445,7 @@ export function TransactionTableTanstack({
   });
 
   // Show loading state if any data is still loading
-  if (accountsLoading || categoriesLoading || payeesLoading) {
+  if (categoriesLoading || payeesLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">

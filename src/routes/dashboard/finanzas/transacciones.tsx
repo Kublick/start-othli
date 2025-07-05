@@ -306,37 +306,13 @@ function RouteComponent() {
                 </Button>
               </div>
             ) : (
-              <>
-                <TransactionTableTanstack
-                  transactions={transactions}
-                  onOpenTransactionSheet={handleEditTransaction}
-                />
-                {/* <TransactionTable
-                  transactions={transactions}
-                  accounts={accounts}
-                  categories={categories}
-                  payees={payees}
-                  updateTransactionMutation={updateTransactionMutation}
-                  createPayee={async (name) => {
-                    await createPayee(name);
-                  }}
-                  createCategory={async (name) => {
-                    await createCategory({
-                      categories: [
-                        {
-                          name,
-                          description: "",
-                          isIncome: false,
-                          excludeFromBudget: false,
-                          excludeFromTotals: false,
-                        },
-                      ],
-                    });
-                  }}
-                  handleEditTransaction={handleEditTransaction}
-                  getTransactionIcon={getTransactionIcon}
-                /> */}
-              </>
+              <TransactionTableTanstack
+                transactions={transactions}
+                onOpenTransactionSheet={handleEditTransaction}
+                createPayee={async (name) => {
+                  await createPayee(name);
+                }}
+              />
             )}
           </CardContent>
         </Card>
