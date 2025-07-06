@@ -10,11 +10,17 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Calendar, ChevronRight } from "lucide-react";
-import type React from "react";
-import { useEffect, useState } from "react";
+import {
+  Calendar,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+} from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+
 import { MyCombobox } from "@/components/ui/my-combobox";
 import {
   Popover,
@@ -71,6 +77,156 @@ const formatDate = (dateString: string) => {
     return dateString;
   }
 };
+
+// Transaction Summary Component (collapsible)
+function TransactionSummaryPanel({
+  transactions,
+  categories,
+  monthLabel,
+}: {
+  transactions: Transaction[];
+  categories: { id: number; name: string }[];
+  monthLabel: string;
+}) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Calculate expenses by category
+  const expensesByCategory = transactions
+    .filter((t) => t.type === "expense" && t.categoryId)
+    .reduce(
+      (acc, transaction) => {
+        const categoryId = transaction.categoryId!;
+        const categoryName =
+          categories.find((c) => c.id === categoryId)?.name || "Sin categoría";
+        const amount = Number.parseFloat(transaction.amount) || 0;
+        if (!acc[categoryName]) acc[categoryName] = 0;
+        acc[categoryName] += amount;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+  const sortedExpenses = Object.entries(expensesByCategory).sort(
+    ([, a], [, b]) => b - a,
+  );
+  const expensesTotal = sortedExpenses.reduce(
+    (sum, [, amount]) => sum + amount,
+    0,
+  );
+
+  // Calculate income by category
+  const incomeByCategory = transactions
+    .filter((t) => t.type === "income" && t.categoryId)
+    .reduce(
+      (acc, transaction) => {
+        const categoryId = transaction.categoryId!;
+        const categoryName =
+          categories.find((c) => c.id === categoryId)?.name || "Sin categoría";
+        const amount = Number.parseFloat(transaction.amount) || 0;
+        if (!acc[categoryName]) acc[categoryName] = 0;
+        acc[categoryName] += amount;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+  const sortedIncome = Object.entries(incomeByCategory).sort(
+    ([, a], [, b]) => b - a,
+  );
+  const incomeTotal = sortedIncome.reduce((sum, [, amount]) => sum + amount, 0);
+
+  // Net income
+  const netIncome = incomeTotal - expensesTotal;
+
+  if (collapsed) {
+    return (
+      <div className="flex h-full flex-col items-end">
+        <button
+          type="button"
+          className="ml-2 rounded-full border bg-white p-1 shadow transition hover:bg-muted"
+          onClick={() => setCollapsed(false)}
+          aria-label="Mostrar resumen"
+        >
+          <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex w-80 min-w-[18rem] max-w-xs flex-col gap-2 rounded-xl border bg-white p-4 shadow">
+      {/* Header with collapse button */}
+      <div className="mb-2 flex items-center justify-between">
+        <span className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+          {monthLabel} Resumen
+        </span>
+        <button
+          type="button"
+          className="ml-2 rounded-full border bg-white p-1 shadow transition hover:bg-muted"
+          onClick={() => setCollapsed(true)}
+          aria-label="Ocultar resumen"
+        >
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </div>
+      <div className="mb-2 border-b" />
+      {/* Expenses */}
+      <div className="mb-1 font-bold text-muted-foreground text-xs">GASTOS</div>
+      <div className="mb-2 flex flex-col gap-1">
+        {sortedExpenses.length > 0 ? (
+          sortedExpenses.map(([category, amount]) => (
+            <div key={category} className="flex items-center justify-between">
+              <span className="font-medium text-primary text-sm">
+                {category}
+              </span>
+              <span className="font-mono text-red-600 text-sm">
+                -{formatCurrency(amount.toString())}
+              </span>
+            </div>
+          ))
+        ) : (
+          <div className="py-2 text-muted-foreground text-sm">
+            No hay gastos categorizados
+          </div>
+        )}
+      </div>
+      {/* Income */}
+      <div className="mt-2 mb-1 font-bold text-muted-foreground text-xs">
+        INGRESOS
+      </div>
+      <div className="mb-2 flex flex-col gap-1">
+        {sortedIncome.length > 0 ? (
+          sortedIncome.map(([category, amount]) => (
+            <div key={category} className="flex items-center justify-between">
+              <span className="font-medium text-primary text-sm">
+                {category}
+              </span>
+              <span className="font-mono text-green-600 text-sm">
+                +{formatCurrency(amount.toString())}
+              </span>
+            </div>
+          ))
+        ) : (
+          <div className="py-2 text-muted-foreground text-sm">
+            No hay ingresos categorizados
+          </div>
+        )}
+      </div>
+      <div className="my-2 border-t border-dashed" />
+      <div className="flex justify-between font-semibold text-sm">
+        <span>Total Gastos</span>
+        <span className="font-mono text-green-600">
+          -{formatCurrency(expensesTotal.toString())}
+        </span>
+      </div>
+      <div className="flex justify-between font-semibold text-sm">
+        <span>Saldo Neto</span>
+        <span className="font-mono text-green-600">
+          {netIncome < 0 ? "-" : ""}
+          {formatCurrency(Math.abs(netIncome).toString())}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 // Editable cell components
 const EditableDescription = ({
@@ -380,6 +536,44 @@ function AccountCell({
   );
 }
 
+// SortableHeader component
+function SortableHeader({
+  columnId,
+  children,
+}: {
+  columnId: string;
+  children: React.ReactNode;
+}) {
+  const table = useReactTableContext();
+  const column = table.getColumn(columnId);
+  const isSorted = column.getIsSorted();
+  return (
+    <button
+      type="button"
+      className="group flex items-center gap-1 rounded border border-transparent px-2 py-1 font-semibold text-muted-foreground text-xs uppercase tracking-wide transition hover:border-primary/20 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+      onClick={() => column.toggleSorting(isSorted === "asc")}
+      tabIndex={0}
+    >
+      {children}
+      {isSorted === "asc" ? (
+        <ChevronUp className="h-3 w-3 text-primary" />
+      ) : isSorted === "desc" ? (
+        <ChevronDown className="h-3 w-3 text-primary" />
+      ) : (
+        <ChevronUp className="h-3 w-3 text-muted-foreground opacity-40" />
+      )}
+    </button>
+  );
+}
+
+// Provide table context for SortableHeader
+const TableContext = React.createContext<any>(null);
+function useReactTableContext() {
+  const ctx = React.useContext(TableContext);
+  if (!ctx) throw new Error("SortableHeader must be used within TableContext");
+  return ctx;
+}
+
 export function TransactionTableTanstack({
   transactions = [],
   onOpenTransactionSheet,
@@ -432,8 +626,8 @@ export function TransactionTableTanstack({
   const columns = [
     // Date column with calendar picker
     columnHelper.accessor("date", {
-      header: "Fecha",
-      size: 60,
+      header: () => <SortableHeader columnId="date">Fecha</SortableHeader>,
+      enableSorting: true,
       cell: ({ row }) => {
         const transaction = row.original;
         const currentDate = transaction.date;
@@ -484,8 +678,10 @@ export function TransactionTableTanstack({
     }),
     // Category column with MyCombobox
     columnHelper.accessor("categoryId", {
-      header: "Categoría",
-      size: 120,
+      header: () => (
+        <SortableHeader columnId="categoryId">Categoría</SortableHeader>
+      ),
+      enableSorting: true,
       cell: ({ row }) => (
         <CategoryCell
           transaction={row.original}
@@ -498,8 +694,10 @@ export function TransactionTableTanstack({
     }),
     // Payee column with MyCombobox
     columnHelper.accessor("payeeId", {
-      size: 150,
-      header: "Beneficiario",
+      header: () => (
+        <SortableHeader columnId="payeeId">Beneficiario</SortableHeader>
+      ),
+      enableSorting: true,
       cell: ({ row }) => (
         <PayeeCell
           transaction={row.original}
@@ -512,8 +710,10 @@ export function TransactionTableTanstack({
     }),
     // Description column with inline editing
     columnHelper.accessor("description", {
-      header: "Descripción",
-      size: 200,
+      header: () => (
+        <SortableHeader columnId="description">Descripción</SortableHeader>
+      ),
+      enableSorting: true,
       cell: ({ row }) => (
         <EditableDescription
           transaction={row.original}
@@ -523,8 +723,10 @@ export function TransactionTableTanstack({
     }),
     // Account column with MyCombobox
     columnHelper.accessor("userAccountId", {
-      header: "Cuenta",
-      size: 120,
+      header: () => (
+        <SortableHeader columnId="userAccountId">Cuenta</SortableHeader>
+      ),
+      enableSorting: true,
       cell: ({ row }) => (
         <AccountCell
           transaction={row.original}
@@ -535,8 +737,8 @@ export function TransactionTableTanstack({
     }),
     // Amount column with inline editing
     columnHelper.accessor("amount", {
-      size: 90,
-      header: "Monto",
+      header: () => <SortableHeader columnId="amount">Monto</SortableHeader>,
+      enableSorting: true,
       cell: ({ row }) => (
         <EditableAmount
           transaction={row.original}
@@ -594,145 +796,167 @@ export function TransactionTableTanstack({
     );
   }
 
+  // Get current month label for summary (in Spanish)
+  const monthLabel = (() => {
+    if (transactions.length === 0) return "";
+    const first = transactions[0];
+    const date = new Date(first.date);
+    return date.toLocaleString("es-ES", { month: "long", year: "numeric" });
+  })();
+
   return (
-    <div className="space-y-4">
-      {/* Global Filter */}
-      <div className="flex items-center gap-4">
-        <input
-          value={globalFilter ?? ""}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          placeholder="Buscar transacciones..."
-          className="flex-1 rounded-md border px-3 py-2 text-sm"
-        />
-      </div>
-
-      {/* Table */}
-      <div className="rounded-md border">
-        <Table style={{ tableLayout: "fixed" }}>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead
-                      key={header.id}
-                      style={{ width: `${header.getSize()}px` }} // Use the size from columnDef
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      style={{ width: `${cell.column.getSize()}px` }}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
+    <TableContext.Provider value={table}>
+      <div className="space-y-4">
+        {/* Global Filter */}
+        <div className="flex items-center gap-4">
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Buscar transacciones..."
+            className="flex-1 rounded-md border px-3 py-2 text-sm"
+          />
+        </div>
+        {/* Table and Summary Layout */}
+        <div className="flex gap-6">
+          {/* Table Section */}
+          <div className="flex-1 space-y-4 overflow-x-auto">
+            <div className="min-w-[700px] rounded-md border">
+              <Table className="min-w-full" style={{ tableLayout: "auto" }}>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => {
+                        return (
+                          <TableHead
+                            key={header.id}
+                            style={{ width: `${header.getSize()}px` }} // Use the size from columnDef
+                          >
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext(),
+                                )}
+                          </TableHead>
+                        );
+                      })}
+                    </TableRow>
                   ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            style={{ width: `${cell.column.getSize()}px` }}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        Uh ho no hay resultados aun...
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <span>
+                  Mostrando{" "}
+                  {table.getState().pagination.pageIndex *
+                    table.getState().pagination.pageSize +
+                    1}{" "}
+                  a{" "}
+                  {Math.min(
+                    (table.getState().pagination.pageIndex + 1) *
+                      table.getState().pagination.pageSize,
+                    (table.getFilteredRowModel()?.rows || []).length,
+                  )}{" "}
+                  de {(table.getFilteredRowModel()?.rows || []).length}{" "}
+                  resultados
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
                 >
-                  Uh ho no hay resultados aun...
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                  {"<<"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  {"<"}
+                </Button>
+                <span className="text-sm">
+                  Página {table.getState().pagination.pageIndex + 1} de{" "}
+                  {table.getPageCount()}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  {">"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                  disabled={!table.getCanNextPage()}
+                >
+                  {">>"}
+                </Button>
+                <select
+                  value={table.getState().pagination.pageSize}
+                  onChange={(e) => table.setPageSize(Number(e.target.value))}
+                  className="rounded-md border px-2 py-1 text-sm"
+                >
+                  {[10, 20, 50, 100].map((pageSize) => (
+                    <option key={pageSize} value={pageSize}>
+                      {pageSize} por página
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
 
-      {/* Pagination Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <span>
-            Mostrando{" "}
-            {table.getState().pagination.pageIndex *
-              table.getState().pagination.pageSize +
-              1}{" "}
-            a{" "}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
-              (table.getFilteredRowModel()?.rows || []).length,
-            )}{" "}
-            de {(table.getFilteredRowModel()?.rows || []).length} resultados
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {"<<"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {"<"}
-          </Button>
-          <span className="text-sm">
-            Página {table.getState().pagination.pageIndex + 1} de{" "}
-            {table.getPageCount()}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            {">"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-          >
-            {">>"}
-          </Button>
-          <select
-            value={table.getState().pagination.pageSize}
-            onChange={(e) => table.setPageSize(Number(e.target.value))}
-            className="rounded-md border px-2 py-1 text-sm"
-          >
-            {[10, 20, 50, 100].map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize} por página
-              </option>
-            ))}
-          </select>
+          {/* Summary Section */}
+          <TransactionSummaryPanel
+            transactions={transactions}
+            categories={categories}
+            monthLabel={monthLabel}
+          />
         </div>
       </div>
-    </div>
+    </TableContext.Provider>
   );
 }
 
