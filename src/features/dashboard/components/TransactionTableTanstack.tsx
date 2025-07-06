@@ -29,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActiveAccounts } from "@/features/dashboard/api/accounts";
 import {
   useActiveCategories,
   useCreateCategories,
@@ -328,12 +329,66 @@ function CategoryCell({
   );
 }
 
+function AccountCell({
+  transaction,
+  accounts,
+  updateTransactionMutation,
+}: {
+  transaction: Transaction;
+  accounts: { id: string; name: string }[];
+  updateTransactionMutation: UseMutationResult<
+    Transaction,
+    Error,
+    UpdateTransactionData,
+    unknown
+  >;
+}) {
+  const accountOptions = accounts.map((account) => ({
+    value: account.id,
+    label: account.name,
+  }));
+
+  const handleChange = async (newValue: string) => {
+    if (newValue === transaction.userAccountId) return;
+
+    try {
+      await updateTransactionMutation.mutateAsync({
+        id: transaction.id,
+        description: transaction.description,
+        amount: transaction.amount,
+        type: transaction.type,
+        currency: transaction.currency,
+        date: transaction.date,
+        notes: transaction.notes ?? undefined,
+        userAccountId: newValue,
+        categoryId: transaction.categoryId ?? undefined,
+        payeeId: transaction.payeeId ?? undefined,
+        transferAccountId: transaction.transferAccountId ?? undefined,
+      });
+    } catch (error) {
+      console.error("Error updating account:", error);
+    }
+  };
+
+  return (
+    <MyCombobox
+      options={accountOptions}
+      value={transaction.userAccountId || ""}
+      onChange={handleChange}
+      placeholder="Seleccionar cuenta"
+    />
+  );
+}
+
 export function TransactionTableTanstack({
   transactions = [],
   onOpenTransactionSheet,
   createPayee,
 }: TransactionTableTanstackProps) {
   // Fetch data using hooks
+
+  const { data: accounts = [], isLoading: accountsLoading } =
+    useActiveAccounts();
 
   const {
     data: categories = [],
@@ -430,6 +485,7 @@ export function TransactionTableTanstack({
     // Category column with MyCombobox
     columnHelper.accessor("categoryId", {
       header: "Categoría",
+      size: 120,
       cell: ({ row }) => (
         <CategoryCell
           transaction={row.original}
@@ -442,7 +498,7 @@ export function TransactionTableTanstack({
     }),
     // Payee column with MyCombobox
     columnHelper.accessor("payeeId", {
-      size: 300,
+      size: 150,
       header: "Beneficiario",
       cell: ({ row }) => (
         <PayeeCell
@@ -457,10 +513,23 @@ export function TransactionTableTanstack({
     // Description column with inline editing
     columnHelper.accessor("description", {
       header: "Descripción",
+      size: 200,
       cell: ({ row }) => (
         <EditableDescription
           transaction={row.original}
           onUpdate={(data) => updateTransactionMutation.mutate(data)}
+        />
+      ),
+    }),
+    // Account column with MyCombobox
+    columnHelper.accessor("userAccountId", {
+      header: "Cuenta",
+      size: 120,
+      cell: ({ row }) => (
+        <AccountCell
+          transaction={row.original}
+          accounts={accounts}
+          updateTransactionMutation={updateTransactionMutation}
         />
       ),
     }),
@@ -514,7 +583,7 @@ export function TransactionTableTanstack({
   });
 
   // Show loading state if any data is still loading
-  if (categoriesLoading || payeesLoading) {
+  if (accountsLoading || categoriesLoading || payeesLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">

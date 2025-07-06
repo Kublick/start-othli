@@ -61,7 +61,6 @@ export function TransactionSheet({
   payees,
   createPayee,
   createCategory,
-
   onDelete,
   deleteStatus,
   saveLoading,

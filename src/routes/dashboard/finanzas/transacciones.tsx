@@ -9,8 +9,14 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
-
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { useActiveAccounts } from "@/features/dashboard/api/accounts";
 import {
@@ -37,6 +43,7 @@ export const Route = createFileRoute("/dashboard/finanzas/transacciones")({
     return {
       year: search.year as string | undefined,
       month: search.month as string | undefined,
+      accountId: search.accountId as string | undefined,
     };
   },
 });
@@ -90,6 +97,7 @@ function RouteComponent() {
   const filters: TransactionFilters = {
     startDate: startOfMonth.toISOString().split("T")[0],
     endDate: endOfMonth.toISOString().split("T")[0],
+    accountId: search.accountId,
   };
 
   const { mutateAsync: createCategory } = useCreateCategories();
@@ -122,6 +130,18 @@ function RouteComponent() {
       search: {
         year: String(newYear),
         month: newMonth,
+        accountId: search.accountId,
+      },
+    });
+  };
+
+  const handleAccountChange = (accountId: string) => {
+    navigate({
+      to: "/dashboard/finanzas/transacciones",
+      search: {
+        year: search.year,
+        month: search.month,
+        accountId: accountId === "all" ? undefined : accountId,
       },
     });
   };
@@ -146,11 +166,12 @@ function RouteComponent() {
         search: {
           year: String(year),
           month: month,
+          accountId: search.accountId,
         },
         replace: true,
       });
     }
-  }, [search.year, search.month, navigate]);
+  }, [search.year, search.month, navigate, search.accountId]);
 
   const handleCreateTransaction = () => {
     setEditingTransaction(null);
@@ -277,6 +298,14 @@ function RouteComponent() {
             </h3>
             <p className="text-muted-foreground text-sm">
               {transactions.length} transacciones
+              {search.accountId && (
+                <>
+                  {" "}
+                  en{" "}
+                  {accounts.find((a) => a.id === search.accountId)?.name ||
+                    "cuenta seleccionada"}
+                </>
+              )}
             </p>
           </div>
           <Button
@@ -288,6 +317,31 @@ function RouteComponent() {
           </Button>
         </div>
 
+        {/* Account Filter */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label htmlFor="account-filter" className="font-medium text-sm">
+              Filtrar por cuenta:
+            </label>
+            <Select
+              value={search.accountId || "all"}
+              onValueChange={handleAccountChange}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Seleccionar cuenta" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las cuentas</SelectItem>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Transactions Table */}
         <Card>
           <CardContent className="pt-6">
@@ -295,6 +349,14 @@ function RouteComponent() {
               <div className="py-8 text-center">
                 <p className="text-muted-foreground">
                   No hay transacciones para {formatMonthYear(currentDate)}
+                  {search.accountId && (
+                    <>
+                      {" "}
+                      en{" "}
+                      {accounts.find((a) => a.id === search.accountId)?.name ||
+                        "la cuenta seleccionada"}
+                    </>
+                  )}
                 </p>
                 <Button
                   variant="outline"
