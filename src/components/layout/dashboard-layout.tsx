@@ -145,6 +145,7 @@ export default function DashboardLayout({
                           search={{
                             year: currentYear,
                             month: currentMonth,
+                            accountId: undefined, // Always include the key, even if you don't have a value
                           }}
                         >
                           <Receipt className="h-4 w-4" />
