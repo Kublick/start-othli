@@ -7,6 +7,7 @@ import financialAccountRouter from "./routes/financialAccountRouter";
 import payeesRouter from "./routes/payeesRouter";
 import { seedRouter } from "./routes/seed";
 import { setupRouter } from "./routes/setupRouter";
+import { summaryRouter } from "./routes/summaryRouter";
 import transactionsRouter from "./routes/transactionsRouter";
 
 const app = new Hono<{ Variables: Context }>();
@@ -36,7 +37,8 @@ const routes = app
   .route("/financial-accounts", financialAccountRouter)
   .route("/setup", setupRouter)
   .route("/transactions", transactionsRouter)
-  .route("/payees", payeesRouter);
+  .route("/payees", payeesRouter)
+  .route("/summary", summaryRouter);
 
 export type AppType = typeof routes;
 

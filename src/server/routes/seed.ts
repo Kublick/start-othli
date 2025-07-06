@@ -24,7 +24,7 @@ export const seedRouter = new Hono<{ Variables: Context }>().get(
           description:
             "Perfect for couples managing shared finances. Includes 2 seats for you and your partner.",
           price: "9.99",
-          currency: "USD",
+          currency: "MXN",
           billingInterval: "monthly",
           maxSeats: 2,
           features: [
