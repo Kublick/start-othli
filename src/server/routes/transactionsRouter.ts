@@ -121,12 +121,12 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
       const transactionData = body.transaction;
 
       if (
-        !transactionData.description ||
+        transactionData.description !== undefined &&
         typeof transactionData.description !== "string"
       ) {
         return c.json(
           {
-            error: "Se requiere una descripción válida para la transacción",
+            error: "La descripción debe ser una cadena de texto válida",
           },
           400,
         );
@@ -183,7 +183,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         .insert(transaction)
         .values({
           id: transactionId,
-          description: transactionData.description,
+          description: transactionData.description || null,
           amount: transactionData.amount,
           type: transactionData.type,
           currency: transactionData.currency || "MXN",
@@ -251,11 +251,19 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         transferAccountId,
       } = body;
 
-      if (!id || !description || typeof description !== "string") {
+      if (!id) {
         return c.json(
           {
-            error:
-              "Se requiere un ID y descripción válidos para la transacción",
+            error: "Se requiere un ID válido para la transacción",
+          },
+          400,
+        );
+      }
+
+      if (description !== undefined && typeof description !== "string") {
+        return c.json(
+          {
+            error: "La descripción debe ser una cadena de texto válida",
           },
           400,
         );
@@ -362,7 +370,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
       const [updatedTransaction] = await db
         .update(transaction)
         .set({
-          description,
+          description: description || null,
           amount,
           type,
           currency: currency || "MXN",

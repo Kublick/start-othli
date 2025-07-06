@@ -110,7 +110,7 @@ function TransactionSummaryPanel({
                 {category}
               </span>
               <span className="font-mono text-red-600 text-sm">
-                -{formatCurrency(amount.toString())}
+                {formatCurrency(amount.toString())}
               </span>
             </div>
           ))
@@ -132,7 +132,7 @@ function TransactionSummaryPanel({
                 {category}
               </span>
               <span className="font-mono text-green-600 text-sm">
-                +{formatCurrency(amount.toString())}
+                {formatCurrency(amount.toString())}
               </span>
             </div>
           ))
@@ -145,14 +145,15 @@ function TransactionSummaryPanel({
       <div className="my-2 border-t border-dashed" />
       <div className="flex justify-between font-semibold text-sm">
         <span>Total Gastos</span>
-        <span className="font-mono text-green-600">
-          -{formatCurrency(expensesTotal.toString())}
+        <span className="font-mono text-red-600">
+          {formatCurrency(expensesTotal.toString())}
         </span>
       </div>
       <div className="flex justify-between font-semibold text-sm">
         <span>Saldo Neto</span>
-        <span className="font-mono text-green-600">
-          {netIncome < 0 ? "-" : ""}
+        <span
+          className={`font-mono ${netIncome >= 0 ? "text-green-600" : "text-red-600"}`}
+        >
           {formatCurrency(Math.abs(netIncome).toString())}
         </span>
       </div>

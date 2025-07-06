@@ -45,9 +45,10 @@ export const useCreatePayee = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createPayee,
-    onSuccess: () => {
+    onSuccess: (createdPayee) => {
       queryClient.invalidateQueries({ queryKey: ["payees"] });
       toast.success("Beneficiario creado exitosamente");
+      return createdPayee;
     },
     onError: (error) => {
       console.error("Error creating payee:", error);

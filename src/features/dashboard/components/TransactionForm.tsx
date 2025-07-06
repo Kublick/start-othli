@@ -29,7 +29,7 @@ import type { TransactionFormData } from "@/features/dashboard/api/transactions"
 const transactionSchema = z.object({
   payeeId: z.number().optional(),
   categoryId: z.number().optional(),
-  description: z.string().min(1, "La descripción es requerida"),
+  description: z.string().optional(),
   amount: z.string().min(1, "El monto es requerido"),
   type: z.enum(["income", "expense", "transfer"]),
   date: z.string().min(1, "La fecha es requerida"),
@@ -71,7 +71,7 @@ export function TransactionForm({
     defaultValues: {
       payeeId: formData.payeeId,
       categoryId: formData.categoryId,
-      description: formData.description,
+      description: formData.description || "",
       amount: formData.amount,
       type: formData.type,
       date: formData.date,
@@ -83,12 +83,20 @@ export function TransactionForm({
   // Keep react-hook-form in sync with parent state
   // (optional: can be omitted if you want form to be fully controlled by react-hook-form)
   useEffect(() => {
-    form.reset({ ...formData, notes: formData.notes || "" });
+    form.reset({
+      ...formData,
+      description: formData.description || "",
+      notes: formData.notes || "",
+    });
   }, [formData, form]);
 
   const [submitted, setSubmitted] = React.useState(false);
   const handleSubmit = (values: TransactionFormSchema) => {
-    const fullValues = { ...values, currency: formData.currency };
+    const fullValues = {
+      ...values,
+      currency: formData.currency,
+      description: values.description || undefined, // Convert empty string to undefined
+    };
     setSubmitted(true);
     if (editingTransactionId) {
       onUpdateTransaction({ id: editingTransactionId, ...fullValues });
@@ -172,7 +180,7 @@ export function TransactionForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descripción</FormLabel>
+              <FormLabel>Descripción (opcional)</FormLabel>
               <FormControl>
                 <Input
                   {...field}

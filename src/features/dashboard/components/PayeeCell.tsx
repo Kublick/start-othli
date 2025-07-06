@@ -1,5 +1,6 @@
 import type { UseMutationResult } from "@tanstack/react-query";
 
+import { PayeeCombobox } from "@/components/ui/payee-combobox";
 import type { Payee } from "@/features/dashboard/api/payees";
 import type {
   Transaction,
@@ -9,12 +10,12 @@ import type {
 const PayeeCell = ({
   transaction,
   payees,
+  createPayee,
   updateTransactionMutation,
 }: {
   transaction: Transaction;
   payees: Payee[];
-  createPayee: (name: string) => Promise<void>;
-  refetchPayees: () => Promise<{ data?: Payee[] }>;
+  createPayee: (name: string) => Promise<number | undefined>;
   updateTransactionMutation: UseMutationResult<
     Transaction,
     Error,
@@ -22,8 +23,8 @@ const PayeeCell = ({
     unknown
   >;
 }) => {
-  const handleChange = async (newValue: string) => {
-    if (newValue === transaction.payeeId?.toString()) return;
+  const handleChange = async (payeeId: number | undefined) => {
+    if (payeeId === transaction.payeeId) return;
     try {
       await updateTransactionMutation.mutateAsync({
         id: transaction.id,
@@ -35,7 +36,7 @@ const PayeeCell = ({
         notes: transaction.notes ?? undefined,
         userAccountId: transaction.userAccountId || "",
         categoryId: transaction.categoryId ?? undefined,
-        payeeId: newValue ? Number.parseInt(newValue, 10) : undefined,
+        payeeId,
         transferAccountId: transaction.transferAccountId ?? undefined,
       });
     } catch (error) {
@@ -43,19 +44,27 @@ const PayeeCell = ({
     }
   };
 
+  const handleCreatePayee = async (
+    name: string,
+  ): Promise<number | undefined> => {
+    try {
+      const createdPayeeId = await createPayee(name);
+      return createdPayeeId;
+    } catch (error) {
+      console.error("Error creating payee:", error);
+      return undefined;
+    }
+  };
+
   return (
-    <select
-      className="w-full rounded border px-2 py-1 text-sm"
-      value={transaction.payeeId?.toString() || ""}
-      onChange={(e) => handleChange(e.target.value)}
-    >
-      <option value="">Sin beneficiario</option>
-      {payees.map((payee) => (
-        <option key={payee.id} value={payee.id}>
-          {payee.name}
-        </option>
-      ))}
-    </select>
+    <PayeeCombobox
+      value={transaction.payeeId ?? undefined}
+      payees={payees}
+      onChange={handleChange}
+      onCreatePayee={handleCreatePayee}
+      placeholder="Sin beneficiario"
+      className="w-full"
+    />
   );
 };
 

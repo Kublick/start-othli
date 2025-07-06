@@ -81,13 +81,31 @@ const fetchCategories = async (): Promise<Category[]> => {
 };
 
 // Create categories
-const createCategories = async (data: CreateCategoryData): Promise<void> => {
+const createCategories = async (
+  data: CreateCategoryData,
+): Promise<Category[]> => {
   const response = await client.api.categories.$post({
     json: data,
   });
   if (!response.ok) {
     throw new Error("Failed to create categories");
   }
+  const result = (await response.json()) as {
+    success: boolean;
+    message: string;
+    categories?: Category[];
+    category?: Category;
+  };
+
+  // Handle both single and bulk creation responses
+  if (result.categories) {
+    return result.categories;
+  }
+  if (result.category) {
+    return [result.category];
+  }
+
+  return [];
 };
 
 // Update category
@@ -162,9 +180,10 @@ export const useCreateCategories = () => {
 
   return useMutation({
     mutationFn: createCategories,
-    onSuccess: () => {
+    onSuccess: (createdCategories) => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.lists() });
       toast.success("Categorías creadas exitosamente");
+      return createdCategories;
     },
     onError: (error) => {
       console.error("Error creating categories:", error);

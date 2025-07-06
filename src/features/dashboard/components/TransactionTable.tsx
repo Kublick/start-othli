@@ -166,8 +166,8 @@ export function TransactionTable({
     UpdateTransactionData,
     unknown
   >;
-  createPayee: (name: string) => Promise<void>;
-  createCategory: (name: string) => Promise<void>;
+  createPayee: (name: string) => Promise<number | undefined>;
+  createCategory: (name: string) => Promise<number | undefined>;
   handleEditTransaction: (transaction: Transaction) => void;
   getTransactionIcon: (type: Transaction["type"]) => React.ReactNode;
 }) {
@@ -232,9 +232,7 @@ export function TransactionTable({
                       transaction.transferAccountId ?? undefined,
                   });
                 }}
-                onCreateCategory={async (name) => {
-                  await createCategory(name);
-                }}
+                onCreateCategory={createCategory}
                 placeholder="Sin categoría"
               />
             </TableCell>

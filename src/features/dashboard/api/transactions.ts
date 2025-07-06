@@ -23,7 +23,7 @@ export interface Transaction {
 }
 
 export interface TransactionFormData {
-  description: string;
+  description?: string;
   amount: string;
   type: "income" | "expense" | "transfer";
   currency: string;

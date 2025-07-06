@@ -1,5 +1,7 @@
 import type { UseMutationResult } from "@tanstack/react-query";
 
+import { CategoryCombobox } from "@/components/ui/category-combobox";
+import type { Category } from "@/features/dashboard/api/categories";
 import type {
   Transaction,
   UpdateTransactionData,
@@ -8,12 +10,12 @@ import type {
 const CategoryCell = ({
   transaction,
   categories,
+  createCategory,
   updateTransactionMutation,
 }: {
   transaction: Transaction;
-  categories: { id: number; name: string }[];
-  createCategory: (name: string) => Promise<void>;
-  refetchCategories: () => Promise<{ data?: { id: number; name: string }[] }>;
+  categories: Category[];
+  createCategory: (name: string) => Promise<number | undefined>;
   updateTransactionMutation: UseMutationResult<
     Transaction,
     Error,
@@ -21,8 +23,8 @@ const CategoryCell = ({
     unknown
   >;
 }) => {
-  const handleChange = async (newValue: string) => {
-    if (newValue === transaction.categoryId?.toString()) return;
+  const handleChange = async (categoryId: number | undefined) => {
+    if (categoryId === transaction.categoryId) return;
     try {
       await updateTransactionMutation.mutateAsync({
         id: transaction.id,
@@ -33,7 +35,7 @@ const CategoryCell = ({
         date: transaction.date,
         notes: transaction.notes ?? undefined,
         userAccountId: transaction.userAccountId || "",
-        categoryId: newValue ? Number.parseInt(newValue, 10) : undefined,
+        categoryId,
         payeeId: transaction.payeeId ?? undefined,
         transferAccountId: transaction.transferAccountId ?? undefined,
       });
@@ -42,19 +44,27 @@ const CategoryCell = ({
     }
   };
 
+  const handleCreateCategory = async (
+    name: string,
+  ): Promise<number | undefined> => {
+    try {
+      const createdCategoryId = await createCategory(name);
+      return createdCategoryId;
+    } catch (error) {
+      console.error("Error creating category:", error);
+      return undefined;
+    }
+  };
+
   return (
-    <select
-      className="w-full rounded border px-2 py-1 text-sm"
-      value={transaction.categoryId?.toString() || ""}
-      onChange={(e) => handleChange(e.target.value)}
-    >
-      <option value="">Sin categoría</option>
-      {categories.map((category) => (
-        <option key={category.id} value={category.id}>
-          {category.name}
-        </option>
-      ))}
-    </select>
+    <CategoryCombobox
+      value={transaction.categoryId ?? undefined}
+      categories={categories}
+      onChange={handleChange}
+      onCreateCategory={handleCreateCategory}
+      placeholder="Sin categoría"
+      className="w-full"
+    />
   );
 };
 

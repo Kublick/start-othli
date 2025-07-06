@@ -22,7 +22,7 @@ export interface PayeeComboboxProps {
   value?: number;
   onChange?: (payeeId: number | undefined) => void;
   payees: Payee[];
-  onCreatePayee: (name: string) => Promise<void>;
+  onCreatePayee: (name: string) => Promise<number | undefined>;
   placeholder?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
@@ -90,7 +90,10 @@ export const PayeeCombobox = React.forwardRef<
 
     const handleCreate = async () => {
       if (!searchQuery.trim()) return;
-      await onCreatePayee(searchQuery.trim());
+      const createdPayeeId = await onCreatePayee(searchQuery.trim());
+      if (createdPayeeId) {
+        onChange?.(createdPayeeId);
+      }
       setOpen(false);
     };
 

@@ -22,7 +22,7 @@ export interface CategoryComboboxProps {
   value?: number;
   onChange?: (categoryId: number | undefined) => void;
   categories: Category[];
-  onCreateCategory: (name: string) => Promise<void>;
+  onCreateCategory: (name: string) => Promise<number | undefined>;
   placeholder?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
@@ -90,7 +90,10 @@ export const CategoryCombobox = React.forwardRef<
 
     const handleCreate = async () => {
       if (!searchQuery.trim()) return;
-      await onCreateCategory(searchQuery.trim());
+      const createdCategoryId = await onCreateCategory(searchQuery.trim());
+      if (createdCategoryId) {
+        onChange?.(createdCategoryId);
+      }
       setOpen(false);
     };
 

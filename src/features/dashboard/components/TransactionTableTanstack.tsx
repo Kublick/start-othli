@@ -51,7 +51,7 @@ import { TableContext } from "./TransactionTableHeader";
 interface TransactionTableTanstackProps {
   transactions: Transaction[];
   onOpenTransactionSheet: (transaction: Transaction) => void;
-  createPayee: (name: string) => Promise<void>;
+  createPayee: (name: string) => Promise<number | undefined>;
 }
 
 // Helper function to format date
@@ -113,15 +113,12 @@ export function TransactionTableTanstack({
   const { data: accounts = [], isLoading: accountsLoading } =
     useActiveAccounts();
 
-  const {
-    data: categories = [],
-    isLoading: categoriesLoading,
-    refetch: refetchCategories,
-  } = useActiveCategories();
+  const { data: categories = [], isLoading: categoriesLoading } =
+    useActiveCategories();
   const { mutateAsync: createCategoryMutation } = useCreateCategories();
 
-  const createCategory = async (name: string) => {
-    await createCategoryMutation({
+  const createCategory = async (name: string): Promise<number | undefined> => {
+    const createdCategories = await createCategoryMutation({
       categories: [
         {
           name,
@@ -132,12 +129,9 @@ export function TransactionTableTanstack({
         },
       ],
     });
+    return createdCategories?.[0]?.id;
   };
-  const {
-    data: payees = [],
-    isLoading: payeesLoading,
-    refetch: refetchPayees,
-  } = usePayees();
+  const { data: payees = [], isLoading: payeesLoading } = usePayees();
 
   // Use mutation hooks
   const updateTransactionMutation = useUpdateTransaction();
@@ -216,7 +210,6 @@ export function TransactionTableTanstack({
           transaction={row.original}
           categories={categories}
           createCategory={createCategory}
-          refetchCategories={refetchCategories}
           updateTransactionMutation={updateTransactionMutation}
         />
       ),
@@ -232,7 +225,6 @@ export function TransactionTableTanstack({
           transaction={row.original}
           payees={payees}
           createPayee={createPayee}
-          refetchPayees={refetchPayees}
           updateTransactionMutation={updateTransactionMutation}
         />
       ),

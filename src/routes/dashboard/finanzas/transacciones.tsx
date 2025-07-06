@@ -206,11 +206,6 @@ function RouteComponent() {
   };
 
   const handleSaveTransaction = async () => {
-    if (!formData.description.trim()) {
-      toast.error("La descripción es requerida");
-      return;
-    }
-
     if (!formData.amount || Number.isNaN(Number.parseFloat(formData.amount))) {
       toast.error("El monto debe ser un número válido");
       return;
@@ -372,7 +367,8 @@ function RouteComponent() {
                 transactions={transactions}
                 onOpenTransactionSheet={handleEditTransaction}
                 createPayee={async (name) => {
-                  await createPayee(name);
+                  const createdPayee = await createPayee(name);
+                  return createdPayee?.id;
                 }}
               />
             )}
