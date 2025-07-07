@@ -22,6 +22,7 @@ import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotRouteImport } from './routes/auth/forgot'
 import { Route as DashboardFinanzasTransaccionesRouteImport } from './routes/dashboard/finanzas/transacciones'
 import { Route as DashboardFinanzasPresupuestosRouteImport } from './routes/dashboard/finanzas/presupuestos'
+import { Route as DashboardFinanzasImportarRouteImport } from './routes/dashboard/finanzas/importar'
 import { ServerRoute as ApiSplatServerRouteImport } from './routes/api/$'
 
 const rootServerRouteImport = createServerRootRoute()
@@ -83,6 +84,12 @@ const DashboardFinanzasPresupuestosRoute =
     path: '/dashboard/finanzas/presupuestos',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DashboardFinanzasImportarRoute =
+  DashboardFinanzasImportarRouteImport.update({
+    id: '/dashboard/finanzas/importar',
+    path: '/dashboard/finanzas/importar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiSplatServerRoute = ApiSplatServerRouteImport.update({
   id: '/api/$',
   path: '/api/$',
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/config/categorias': typeof ConfigCategoriasRoute
   '/config/cuentas': typeof ConfigCuentasRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
@@ -112,6 +120,7 @@ export interface FileRoutesByTo {
   '/config/categorias': typeof ConfigCategoriasRoute
   '/config/cuentas': typeof ConfigCuentasRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
@@ -126,6 +135,7 @@ export interface FileRoutesById {
   '/config/categorias': typeof ConfigCategoriasRoute
   '/config/cuentas': typeof ConfigCuentasRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
+  '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/config/categorias'
     | '/config/cuentas'
     | '/dashboard/overview'
+    | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
   fileRoutesByTo: FileRoutesByTo
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/config/categorias'
     | '/config/cuentas'
     | '/dashboard/overview'
+    | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
   id:
@@ -167,6 +179,7 @@ export interface FileRouteTypes {
     | '/config/categorias'
     | '/config/cuentas'
     | '/dashboard/overview'
+    | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
   fileRoutesById: FileRoutesById
@@ -181,6 +194,7 @@ export interface RootRouteChildren {
   ConfigCategoriasRoute: typeof ConfigCategoriasRoute
   ConfigCuentasRoute: typeof ConfigCuentasRoute
   DashboardOverviewRoute: typeof DashboardOverviewRoute
+  DashboardFinanzasImportarRoute: typeof DashboardFinanzasImportarRoute
   DashboardFinanzasPresupuestosRoute: typeof DashboardFinanzasPresupuestosRoute
   DashboardFinanzasTransaccionesRoute: typeof DashboardFinanzasTransaccionesRoute
 }
@@ -285,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardFinanzasPresupuestosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/finanzas/importar': {
+      id: '/dashboard/finanzas/importar'
+      path: '/dashboard/finanzas/importar'
+      fullPath: '/dashboard/finanzas/importar'
+      preLoaderRoute: typeof DashboardFinanzasImportarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 declare module '@tanstack/react-start/server' {
@@ -309,6 +330,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfigCategoriasRoute: ConfigCategoriasRoute,
   ConfigCuentasRoute: ConfigCuentasRoute,
   DashboardOverviewRoute: DashboardOverviewRoute,
+  DashboardFinanzasImportarRoute: DashboardFinanzasImportarRoute,
   DashboardFinanzasPresupuestosRoute: DashboardFinanzasPresupuestosRoute,
   DashboardFinanzasTransaccionesRoute: DashboardFinanzasTransaccionesRoute,
 }

@@ -182,7 +182,7 @@ export const rules = pgTable("rules", {
 
 export const transaction = pgTable("transaction", {
   id: text("id").primaryKey(),
-  description: varchar("description", { length: 200 }).notNull(),
+  description: varchar("description", { length: 200 }),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
   type: transactionTypeEnum("type").notNull(),
   currency: varchar("currency", { length: 3 }).notNull().default("MXN"),

@@ -36,6 +36,20 @@
       "when": 1750892148338,
       "tag": "0004_fresh_changeling",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1751927365324,
+      "tag": "0005_lyrical_rattler",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1751927987053,
+      "tag": "0006_glorious_apocalypse",
+      "breakpoints": true
     }
   ]
 }

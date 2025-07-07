@@ -11,7 +11,6 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, ChevronDown, ChevronRight, ChevronUp } from "lucide-react";
 import React, { useState } from "react";
-
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
@@ -20,6 +19,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+
 import {
   Table,
   TableBody,
@@ -33,7 +33,6 @@ import {
   useActiveCategories,
   useCreateCategories,
 } from "@/features/dashboard/api/categories";
-
 import { usePayees } from "@/features/dashboard/api/payees";
 import type { Transaction } from "@/features/dashboard/api/transactions";
 import { useUpdateTransaction } from "@/features/dashboard/api/transactions";
@@ -329,7 +328,7 @@ export function TransactionTableTanstack({
     <TableContext.Provider value={table}>
       <div className="space-y-4">
         {/* Importar Dialog (composable) */}
-        <TransactionImportDialog accounts={accounts} />
+        <TransactionImportDialog accounts={accounts} onImport={() => {}} />
         {/* Global Filter */}
         <div className="flex items-center gap-4">
           <input

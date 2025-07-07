@@ -346,7 +346,7 @@ export const transaction = pgTable(
   "transaction",
   {
     id: text().primaryKey().notNull(),
-    description: varchar({ length: 200 }).notNull(),
+    description: varchar({ length: 200 }),
     amount: numeric({ precision: 12, scale: 2 }).notNull(),
     type: transactionType().notNull(),
     currency: varchar({ length: 3 }).default("MXN").notNull(),
