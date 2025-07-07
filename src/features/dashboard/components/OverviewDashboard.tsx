@@ -64,12 +64,10 @@ export function OverviewDashboard({
 
   // Spanish labels for account types
   const accountTypeLabels: Record<string, string> = {
-    credit: "Crédito",
-    checking: "Débito",
-    savings: "Ahorro",
-    cash: "Efectivo",
-    investment: "Inversión",
-    other: "Otro",
+    efectivo: "Efectivo",
+    debito: "Débito",
+    credito: "Crédito",
+    inversion: "Inversión",
   };
 
   return (

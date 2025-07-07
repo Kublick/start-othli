@@ -9,7 +9,7 @@ export interface SummaryCategory {
 }
 
 export interface SummaryAccount {
-  id: number;
+  id: string;
   name: string;
   type: string;
   balance: number;

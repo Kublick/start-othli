@@ -1,4 +1,4 @@
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "@/db";
 import { categories, transaction, userAccount } from "@/db/schema";
@@ -47,7 +47,36 @@ export const summaryRouter = new Hono<{ Variables: Context }>().get(
     // Group by category
     const categoryMap = Object.fromEntries(cats.map((c) => [c.id, c]));
 
-    // Aggregate
+    // Calculate account balances as of the end date using a single aggregated query
+    const accountBalanceResults = await db
+      .select({
+        userAccountId: transaction.userAccountId,
+        balance: sql<number>`COALESCE(SUM(${transaction.amount}::numeric), 0)`,
+      })
+      .from(transaction)
+      .where(
+        and(
+          eq(transaction.userId, user.id),
+          eq(transaction.isTransfer, false),
+          lte(transaction.date, new Date(end)), // Up to end date
+        ),
+      )
+      .groupBy(transaction.userAccountId);
+
+    // Create a map of account balances
+    const balanceMap = Object.fromEntries(
+      accountBalanceResults.map((r) => [r.userAccountId, Number(r.balance)]),
+    );
+
+    // Build account summaries with calculated balances
+    const accountBalances = accts.map((acct) => ({
+      id: acct.id,
+      name: acct.name,
+      type: acct.type,
+      balance: balanceMap[acct.id] || 0,
+    }));
+
+    // Aggregate transactions in the date range
     let income = 0;
     let expenses = 0;
     const categoryTotals: Record<
@@ -83,16 +112,8 @@ export const summaryRouter = new Hono<{ Variables: Context }>().get(
     const netIncome = income - expenses;
     const savingsRate = income > 0 ? netIncome / income : 0;
 
-    // Account balances (as of end date)
-    const accountSummaries = accts.map((acct) => ({
-      id: acct.id,
-      name: acct.name,
-      type: acct.type,
-      balance: Number(acct.balance), // Convert decimal to number
-    }));
-
-    // Net worth = sum of all account balances
-    const netWorth = accountSummaries.reduce(
+    // Net worth = sum of all account balances as of end date
+    const netWorth = accountBalances.reduce(
       (sum, a) => sum + (a.balance || 0),
       0,
     );
@@ -122,7 +143,7 @@ export const summaryRouter = new Hono<{ Variables: Context }>().get(
 
     return c.json({
       dateRange: { start, end },
-      accounts: accountSummaries,
+      accounts: accountBalances,
       netWorth,
       income,
       expenses: Math.abs(expenses),
