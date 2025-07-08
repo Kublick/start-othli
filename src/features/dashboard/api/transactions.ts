@@ -4,7 +4,7 @@ import { client } from "@/lib/client";
 
 export interface Transaction {
   id: string;
-  description: string;
+  description: string | null;
   amount: string;
   type: "income" | "expense" | "transfer";
   currency: string;
@@ -34,6 +34,19 @@ export interface TransactionFormData {
   payeeId?: number;
   isTransfer?: boolean;
   transferAccountId?: string;
+}
+
+export type MappedRow = {
+  payee: string;
+  amount: string;
+  date: string;
+  category?: string;
+  type: "income" | "expense";
+};
+
+export interface BulkTransactionData {
+  accountId: string;
+  mappedRows: MappedRow[];
 }
 
 export interface CreateTransactionData {
@@ -152,6 +165,25 @@ const createTransaction = async (
   return result.transaction;
 };
 
+const bulkCreateTransactions = async ({
+  mappedRows,
+  accountId,
+}: BulkTransactionData) => {
+  // Map each row to include userAccountId
+  const transactionsWithAccount = mappedRows.map((row) => ({
+    ...row,
+    userAccountId: accountId,
+  }));
+
+  const res = await client.api.transactions["bulk-import"].$post({
+    json: { transactions: transactionsWithAccount },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to bulk upload");
+  }
+  return res.json();
+};
+
 // Update transaction
 const updateTransaction = async (
   data: UpdateTransactionData,
@@ -223,6 +255,21 @@ export const useCreateTransaction = () => {
     onError: (error) => {
       console.error("Error creating transaction:", error);
       toast.error("Error al crear la transacción");
+    },
+  });
+};
+
+export const useCreateBulkTransactions = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bulkCreateTransactions,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
+      toast.success("Transacciones importadas correctamente");
+    },
+    onError: () => {
+      toast.error("Error al importar transacciones");
     },
   });
 };

@@ -1,5 +1,5 @@
-import { createFileRoute, useLocation } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  type MappedRow,
+  useCreateBulkTransactions,
+} from "@/features/dashboard/api/transactions";
 import { useImportStore } from "@/store/import-store";
 
 export const Route = createFileRoute("/dashboard/finanzas/importar")({
@@ -31,37 +35,10 @@ const FIELD_OPTIONS = [
   { value: "category", label: "Categoría" },
 ];
 
-type ImportState = {
-  rows: Record<string, string>[];
-  headers: string[];
-  accountId: string;
-};
-
-type MappedRow = {
-  payee: string;
-  amount: string;
-  date: string;
-  category?: string;
-  type: "income" | "expense";
-};
-
 function RouteComponent() {
-  const location = useLocation();
-  const { setImportData, rows, headers, mapping, setMapping, accountId } =
-    useImportStore();
-
-  useEffect(() => {
-    const state = (location.state || {}) as Partial<ImportState>;
-    if (state.rows && state.headers) {
-      setImportData({
-        rows: state.rows,
-        headers: state.headers,
-        accountId: state.accountId || "",
-      });
-    }
-    // eslint-disable-next-line
-  }, [location.state, setImportData]);
-
+  const { rows, headers, mapping, setMapping, accountId } = useImportStore();
+  const bulkUpload = useCreateBulkTransactions();
+  const navigate = useNavigate();
   return (
     <div className="w-full p-8">
       <h1 className="mb-6 font-bold text-2xl">Importar transacciones</h1>
@@ -109,7 +86,7 @@ function RouteComponent() {
       </div>
       <div className="mt-6 flex justify-end">
         <Button
-          onClick={async () => {
+          onClick={() => {
             // 1. Map and validate
             const mappedRows: MappedRow[] = rows.map(
               (row: Record<string, string>) => {
@@ -142,6 +119,7 @@ function RouteComponent() {
                 };
               },
             );
+
             const isValid = mappedRows.every(
               (row) => row.payee && row.amount && row.date,
             );
@@ -149,25 +127,27 @@ function RouteComponent() {
               toast.error("Faltan campos requeridos en algunas filas");
               return;
             }
-            // 2. Send to backend
-            try {
-              const res = await fetch("/api/transactions/bulk-import", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ transactions: mappedRows, accountId }),
-              });
-              if (res.ok) {
-                toast.success("Transacciones importadas correctamente");
-              } else {
-                toast.error("Error al importar transacciones");
-              }
-            } catch (err) {
-              console.log(err);
-              toast.error("Error de red al importar transacciones");
-            }
+
+            // 2. Use mutation to upload
+            bulkUpload.mutate(
+              { mappedRows, accountId },
+              {
+                onSuccess: () => {
+                  navigate({
+                    to: "/dashboard/finanzas/transacciones",
+                    search: {
+                      year: undefined,
+                      month: undefined,
+                      accountId: undefined,
+                    },
+                  });
+                },
+              },
+            );
           }}
+          disabled={bulkUpload.isPending}
         >
-          Importar
+          {bulkUpload.isPending ? "Importando..." : "Importar"}
         </Button>
       </div>
     </div>

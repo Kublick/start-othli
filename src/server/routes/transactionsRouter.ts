@@ -1,5 +1,6 @@
 import { and, desc, eq, gte, like, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { nanoid } from "nanoid";
 import { db } from "@/db";
 import {
   categories,
@@ -160,7 +161,7 @@ const parseDate = (dateStr: string): Date => {
       }
     }
 
-    if (parsedDate && !isNaN(parsedDate.getTime())) {
+    if (parsedDate && !Number.isNaN(parsedDate.getTime())) {
       return parsedDate;
     }
   }
@@ -327,7 +328,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         );
       }
 
-      const transactionId = `txn_${user.id}_${Date.now()}_${Math.random()}`;
+      const transactionId = `txn_${nanoid(8)}`;
 
       const [createdTransaction] = await db
         .insert(transaction)
@@ -424,7 +425,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
       const createdTransactions = [];
       for (const [i, transactionData] of transactions.entries()) {
         try {
-          const transactionId = `txn_${user.id}_${Date.now()}_${Math.random()}`;
+          const transactionId = `txn_${nanoid(8)}`;
 
           // Handle category lookup/creation
           const categoryId = await findOrCreateCategory(

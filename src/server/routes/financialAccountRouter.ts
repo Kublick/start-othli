@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { nanoid } from "nanoid";
 import { db } from "@/db";
 import { userAccount } from "@/db/schema";
 import type { Context } from "../context";
@@ -80,7 +81,7 @@ const financialAccountRouter = new Hono<{ Variables: Context }>()
           .insert(userAccount)
           .values(
             accountData.map((account) => ({
-              id: `acc_${user.id}_${Date.now()}_${Math.random()}`,
+              id: `acc_${nanoid(6)}`,
               name: account.name,
               type: accountTypeMapping[account.type],
               balance: account.balance || "0.00",
