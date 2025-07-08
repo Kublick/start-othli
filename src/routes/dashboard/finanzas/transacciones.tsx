@@ -60,7 +60,6 @@ function RouteComponent() {
   const [formData, setFormData] = useState<TransactionFormData>({
     description: "",
     amount: "",
-    type: "expense",
     currency: "MXN",
     date: new Date().toISOString().split("T")[0],
     notes: "",
@@ -179,7 +178,6 @@ function RouteComponent() {
     setFormData({
       description: "",
       amount: "",
-      type: "expense",
       currency: "mxn",
       date: new Date().toISOString().split("T")[0],
       notes: "",
@@ -195,7 +193,7 @@ function RouteComponent() {
     setFormData({
       description: transaction.description ?? undefined,
       amount: transaction.amount,
-      type: transaction.type,
+
       currency: transaction.currency ?? "MXN",
       date: new Date(transaction.date).toISOString().split("T")[0],
       notes: transaction.notes ?? undefined,

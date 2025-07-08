@@ -160,7 +160,6 @@ export function TransactionTableTanstack({
               id: transaction.id,
               description: transaction.description ?? "",
               amount: transaction.amount,
-              type: transaction.type,
               currency: transaction.currency,
               date: formattedDate,
               notes: transaction.notes ?? undefined,

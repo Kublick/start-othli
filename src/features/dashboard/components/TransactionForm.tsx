@@ -31,7 +31,6 @@ const transactionSchema = z.object({
   categoryId: z.number().optional(),
   description: z.string().optional(),
   amount: z.string().min(1, "El monto es requerido"),
-  type: z.enum(["income", "expense", "transfer"]),
   date: z.string().min(1, "La fecha es requerida"),
   userAccountId: z.string().min(1, "La cuenta es requerida"),
   notes: z.string().optional(),
@@ -66,14 +65,20 @@ export function TransactionForm({
   onCreateTransaction,
   onOpenChange,
 }: TransactionFormProps) {
+  // Determine initial sign from formData.amount
+  const initialIsNegative = React.useMemo(() => {
+    if (formData.amount === undefined || formData.amount === "") return true;
+    return Number(formData.amount) < 0;
+  }, [formData.amount]);
+  const [isNegative, setIsNegative] = React.useState(initialIsNegative);
+
   const form = useForm<TransactionFormSchema>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
       payeeId: formData.payeeId,
       categoryId: formData.categoryId,
       description: formData.description || "",
-      amount: formData.amount,
-      type: formData.type,
+      amount: formData.amount ? String(Math.abs(Number(formData.amount))) : "",
       date: formData.date,
       userAccountId: formData.userAccountId,
       notes: formData.notes || "",
@@ -81,19 +86,37 @@ export function TransactionForm({
   });
 
   // Keep react-hook-form in sync with parent state
-  // (optional: can be omitted if you want form to be fully controlled by react-hook-form)
   useEffect(() => {
     form.reset({
       ...formData,
+      amount: formData.amount ? String(Math.abs(Number(formData.amount))) : "",
       description: formData.description || "",
       notes: formData.notes || "",
     });
+    setIsNegative(
+      formData.amount === undefined || formData.amount === ""
+        ? true
+        : Number(formData.amount) < 0,
+    );
   }, [formData, form]);
+
+  // When category changes, adjust isNegative based on category type
+  React.useEffect(() => {
+    const categoryId = form.watch("categoryId");
+    if (!categoryId) return;
+    const selectedCategory = categories.find((c) => c.id === categoryId);
+    if (!selectedCategory) return;
+    setIsNegative(!selectedCategory.isIncome);
+  }, [categories, form.watch]);
 
   const [submitted, setSubmitted] = React.useState(false);
   const handleSubmit = (values: TransactionFormSchema) => {
+    // Combine sign and value
+    const absAmount = Math.abs(Number(values.amount));
+    const signedAmount = isNegative ? -absAmount : absAmount;
     const fullValues = {
       ...values,
+      amount: String(signedAmount),
       currency: formData.currency,
       description: values.description || undefined, // Convert empty string to undefined
     };
@@ -198,34 +221,35 @@ export function TransactionForm({
             <FormItem>
               <FormLabel>Monto *</FormLabel>
               <FormControl>
-                <Input
-                  {...field}
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="type"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tipo *</FormLabel>
-              <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="expense">Gasto</SelectItem>
-                    <SelectItem value="income">Ingreso</SelectItem>
-                    <SelectItem value="transfer">Transferencia</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="relative w-full">
+                  <button
+                    type="button"
+                    aria-label={
+                      isNegative ? "Cambiar a positivo" : "Cambiar a negativo"
+                    }
+                    className={[
+                      "-translate-y-1/2 absolute top-1/2 left-1 z-10 flex h-6 w-6 items-center justify-center rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-400",
+                      isNegative ? "bg-red-600" : "bg-green-600",
+                    ].join(" ")}
+                    tabIndex={0}
+                    onClick={() => setIsNegative((prev) => !prev)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setIsNegative((prev) => !prev);
+                      }
+                    }}
+                  >
+                    {isNegative ? "-" : "+"}
+                  </button>
+                  <Input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    className="pr-2 pl-8"
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

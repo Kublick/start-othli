@@ -6,7 +6,7 @@ export interface Transaction {
   id: string;
   description: string | null;
   amount: string;
-  type: "income" | "expense" | "transfer";
+
   currency: string;
   date: string;
   notes: string | null;
@@ -25,7 +25,7 @@ export interface Transaction {
 export interface TransactionFormData {
   description?: string;
   amount: string;
-  type: "income" | "expense" | "transfer";
+
   currency: string;
   date: string;
   notes?: string;
@@ -352,25 +352,6 @@ export const useTransactionsByCategory = (categoryId: number) => {
   const { data, ...rest } = useTransactions({ categoryId });
   const transactions = data?.transactions || [];
   return { data: transactions, ...rest };
-};
-
-// Transaction type mapping
-export const transactionTypeLabels: Record<Transaction["type"], string> = {
-  income: "Ingreso",
-  expense: "Gasto",
-  transfer: "Transferencia",
-};
-
-export const transactionTypeColors: Record<Transaction["type"], string> = {
-  income: "bg-green-100 text-green-800",
-  expense: "bg-red-100 text-red-800",
-  transfer: "bg-blue-100 text-blue-800",
-};
-
-export const transactionTypeIcons: Record<Transaction["type"], string> = {
-  income: "↑",
-  expense: "↓",
-  transfer: "↔",
 };
 
 // Utility functions

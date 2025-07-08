@@ -132,7 +132,7 @@ export function TransactionSheet({
             >
               <TransactionHistory
                 transactionId={editingTransaction.id}
-                transactionDescription={editingTransaction.description}
+                transactionDescription={editingTransaction.description ?? ""}
                 accounts={accounts}
                 categories={categories}
                 payees={payees}

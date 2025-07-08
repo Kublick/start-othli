@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-
+import React from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useActiveCategories } from "@/features/dashboard/api/categories";
 import {
   type MappedRow,
   useCreateBulkTransactions,
@@ -39,6 +40,19 @@ function RouteComponent() {
   const { rows, headers, mapping, setMapping, accountId } = useImportStore();
   const bulkUpload = useCreateBulkTransactions();
   const navigate = useNavigate();
+  const { data: categories = [] } = useActiveCategories();
+
+  // Build a map from category name to isIncome
+  const categoryTypeMap = React.useMemo(() => {
+    const map: Record<string, boolean> = {};
+    categories.forEach((cat) => {
+      if (cat.name) {
+        map[cat.name.trim().toLowerCase()] = cat.isIncome;
+      }
+    });
+    return map;
+  }, [categories]);
+
   return (
     <div className="w-full p-8">
       <h1 className="mb-6 font-bold text-2xl">Importar transacciones</h1>
@@ -109,13 +123,24 @@ function RouteComponent() {
 
                 const amountStr = row[amountKey];
                 const amountNum = Number(amountStr);
+                const categoryName = categoryKey
+                  ? row[categoryKey]?.trim().toLowerCase()
+                  : undefined;
+                let type: "income" | "expense" =
+                  amountNum < 0 ? "expense" : "income";
+                if (
+                  categoryName &&
+                  categoryTypeMap[categoryName] !== undefined
+                ) {
+                  type = categoryTypeMap[categoryName] ? "income" : "expense";
+                }
 
                 return {
                   payee: row[payeeKey],
                   amount: amountStr,
                   date: row[dateKey],
                   category: categoryKey ? row[categoryKey] : undefined,
-                  type: amountNum < 0 ? "expense" : "income",
+                  type,
                 };
               },
             );

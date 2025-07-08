@@ -4,6 +4,7 @@ import type {
   Transaction,
   UpdateTransactionData,
 } from "@/features/dashboard/api/transactions";
+import { cn } from "@/lib/utils";
 
 const EditableAmount = ({
   transaction,
@@ -26,6 +27,7 @@ const EditableAmount = ({
         categoryId: transaction.categoryId ?? undefined,
         payeeId: transaction.payeeId ?? undefined,
         transferAccountId: transaction.transferAccountId ?? undefined,
+        description: transaction.description ?? undefined,
       });
     }
   };
@@ -41,13 +43,43 @@ const EditableAmount = ({
 
   if (isEditing) {
     return (
-      <input
-        className="w-full rounded border px-2 py-1 text-right text-sm"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-      />
+      <div className="relative w-full">
+        <button
+          type="button"
+          aria-label={
+            Number(value) < 0 ? "Cambiar a positivo" : "Cambiar a negativo"
+          }
+          className={cn(
+            "-translate-y-1/2 absolute top-1/2 left-1 z-10 flex h-6 w-6 items-center justify-center rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-green-400",
+            Number(value) < 0 ? "bg-red-600" : "bg-green-600",
+          )}
+          tabIndex={0}
+          onClick={() => {
+            if (!Number.isNaN(Number(value)) && value !== "") {
+              const newValue = String(Number(value) * -1);
+              setValue(newValue);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              if (!Number.isNaN(Number(value)) && value !== "") {
+                const newValue = String(Number(value) * -1);
+                setValue(newValue);
+              }
+            }
+          }}
+        >
+          {Number(value) < 0 ? "-" : "+"}
+        </button>
+        <input
+          className="w-full rounded border py-1 pr-2 pl-8 text-right text-sm"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+        />
+      </div>
     );
   }
 

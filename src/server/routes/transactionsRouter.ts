@@ -129,7 +129,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         endDate,
         accountId,
         categoryId,
-        type,
+
         search,
         page = "1",
         limit = "20",
@@ -161,12 +161,6 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
       if (categoryId) {
         conditions.push(
           eq(transaction.categoryId, Number.parseInt(categoryId, 10)),
-        );
-      }
-
-      if (type) {
-        conditions.push(
-          eq(transaction.type, type as "income" | "expense" | "transfer"),
         );
       }
 
@@ -279,7 +273,6 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
           id: transactionId,
           description: transactionData.description || null,
           amount: transactionData.amount,
-          type: transactionData.type,
           currency: transactionData.currency || "MXN",
           date: new Date(transactionData.date),
           notes: transactionData.notes || null,
@@ -339,7 +332,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         );
       }
 
-      // 2. Pre-fetch all categories and payees for the user
+      // 1. Pre-fetch all categories and payees for the user
       const [allCategories, allPayees] = await Promise.all([
         db.query.categories.findMany({ where: eq(categories.userId, user.id) }),
         db.query.payees.findMany({ where: eq(payees.userId, user.id) }),
@@ -351,7 +344,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         allPayees.map((p) => [p.name.trim().toLowerCase(), p.id]),
       );
 
-      // 3. Prepare new categories/payees to create
+      // 2. Prepare new categories/payees to create
       const newCategories = new Set<string>();
       const newPayees = new Set<string>();
       for (const tx of transactions) {
@@ -363,7 +356,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         }
       }
 
-      // 4. Bulk create new categories/payees if needed
+      // 3. Bulk create new categories/payees if needed
       if (newCategories.size > 0) {
         const created = await db
           .insert(categories)
@@ -404,7 +397,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         }
       }
 
-      // 5. Prepare all transaction rows for bulk insert
+      // 4. Prepare all transaction rows for bulk insert
       const now = new Date();
       const txRows = [];
       for (const tx of transactions) {
@@ -557,12 +550,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
           to: amount ?? "",
         };
       }
-      if (existingTransaction.type !== type) {
-        changes.type = {
-          from: existingTransaction.type ?? "",
-          to: type ?? "",
-        };
-      }
+
       if (
         existingTransaction.date.toISOString() !== new Date(date).toISOString()
       ) {
@@ -595,7 +583,6 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         .set({
           description: description || null,
           amount,
-          type,
           currency: currency || "MXN",
           date: new Date(date),
           notes: notes || null,
@@ -616,7 +603,6 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
           previousValues: {
             description: existingTransaction.description,
             amount: existingTransaction.amount,
-            type: existingTransaction.type,
             date: existingTransaction.date,
             userAccountId: existingTransaction.userAccountId,
             categoryId: existingTransaction.categoryId,
@@ -693,7 +679,6 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
       await recordTransactionHistory(id, user.id, "deleted", {
         description: existingTransaction.description,
         amount: existingTransaction.amount,
-        type: existingTransaction.type,
         currency: existingTransaction.currency,
         date: existingTransaction.date,
         userAccountId: existingTransaction.userAccountId,

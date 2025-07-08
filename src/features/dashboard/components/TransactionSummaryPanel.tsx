@@ -11,33 +11,42 @@ export const formatCurrency = (amount: string, currency = "MXN") => {
   })}`;
 };
 
+// Type guard to filter out nulls
+function isNotNull<T>(v: T | null): v is T {
+  return v !== null;
+}
+
 function TransactionSummaryPanel({
   transactions,
   categories,
   monthLabel,
 }: {
-  transactions: { type: string; categoryId?: number | null; amount: string }[];
-  categories: { id: number; name: string }[];
+  transactions: { categoryId?: number | null; amount: string }[];
+  categories: { id: number; name: string; isIncome: boolean }[];
   monthLabel: string;
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
   // Calculate expenses by category
   const expensesByCategory = transactions
-    .filter((t) => t.type === "expense" && t.categoryId != null)
+    .map((transaction) => {
+      const category = categories.find((c) => c.id === transaction.categoryId);
+      if (!category || category.isIncome) return null;
+      return {
+        categoryName: category.name,
+        amount: Number.parseFloat(transaction.amount) || 0,
+      };
+    })
+    .filter(isNotNull)
     .reduce(
-      (acc, transaction) => {
-        const categoryId = transaction.categoryId;
-        if (categoryId == null) return acc; // extra safety
-        const categoryName =
-          categories.find((c) => c.id === categoryId)?.name || "Sin categoría";
-        const amount = Number.parseFloat(transaction.amount) || 0;
+      (acc, { categoryName, amount }) => {
         if (!acc[categoryName]) acc[categoryName] = 0;
         acc[categoryName] += amount;
         return acc;
       },
       {} as Record<string, number>,
     );
+
   const sortedExpenses = Object.entries(expensesByCategory).sort(
     ([, a], [, b]) => b - a,
   );
@@ -48,20 +57,24 @@ function TransactionSummaryPanel({
 
   // Calculate income by category
   const incomeByCategory = transactions
-    .filter((t) => t.type === "income" && t.categoryId != null)
+    .map((transaction) => {
+      const category = categories.find((c) => c.id === transaction.categoryId);
+      if (!category || !category.isIncome) return null;
+      return {
+        categoryName: category.name,
+        amount: Number.parseFloat(transaction.amount) || 0,
+      };
+    })
+    .filter(isNotNull)
     .reduce(
-      (acc, transaction) => {
-        const categoryId = transaction.categoryId;
-        if (categoryId == null) return acc; // extra safety
-        const categoryName =
-          categories.find((c) => c.id === categoryId)?.name || "Sin categoría";
-        const amount = Number.parseFloat(transaction.amount) || 0;
+      (acc, { categoryName, amount }) => {
         if (!acc[categoryName]) acc[categoryName] = 0;
         acc[categoryName] += amount;
         return acc;
       },
       {} as Record<string, number>,
     );
+
   const sortedIncome = Object.entries(incomeByCategory).sort(
     ([, a], [, b]) => b - a,
   );

@@ -1,12 +1,14 @@
 import { create } from "zustand";
 
+export type ImportRow = Record<string, string>;
+
 interface ImportStoreState {
-  rows: any[];
+  rows: ImportRow[];
   headers: string[];
   accountId: string;
   mapping: { [col: string]: string };
   setImportData: (data: {
-    rows: any[];
+    rows: ImportRow[];
     headers: string[];
     accountId: string;
   }) => void;
