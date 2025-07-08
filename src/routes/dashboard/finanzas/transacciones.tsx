@@ -33,6 +33,7 @@ import {
   useTransactions,
   useUpdateTransaction,
 } from "@/features/dashboard/api/transactions";
+import TransactionImportDialog from "@/features/dashboard/components/TransactionImportDialog";
 import { TransactionSheet } from "@/features/dashboard/components/TransactionSheet";
 
 import { TransactionTableTanstack } from "@/features/dashboard/components/TransactionTableTanstack";
@@ -192,15 +193,15 @@ function RouteComponent() {
   const handleEditTransaction = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setFormData({
-      description: transaction.description,
+      description: transaction.description ?? undefined,
       amount: transaction.amount,
       type: transaction.type,
-      currency: transaction.currency,
+      currency: transaction.currency ?? "MXN",
       date: new Date(transaction.date).toISOString().split("T")[0],
-      notes: transaction.notes || "",
-      userAccountId: transaction.userAccountId || "",
-      categoryId: transaction.categoryId || undefined,
-      payeeId: transaction.payeeId || undefined,
+      notes: transaction.notes ?? undefined,
+      userAccountId: (transaction.userAccountId ?? accounts[0]?.id) || "",
+      categoryId: transaction.categoryId ?? undefined,
+      payeeId: transaction.payeeId ?? undefined,
     });
     setIsSheetOpen(true);
   };
@@ -272,10 +273,13 @@ function RouteComponent() {
               Lleva el control de tus transacciones financieras
             </p>
           </div>
-          <Button onClick={handleCreateTransaction}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nueva Transacción
-          </Button>
+          <div className="flex flex-col items-end gap-2">
+            <Button onClick={handleCreateTransaction}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nueva Transacción
+            </Button>
+            <TransactionImportDialog accounts={accounts} onImport={() => {}} />
+          </div>
         </div>
 
         {/* Month Navigation */}

@@ -42,7 +42,6 @@ import CategoryCell from "./CategoryCell";
 import EditableAmount from "./EditableAmount";
 import EditableDescription from "./EditableDescription";
 import PayeeCell from "./PayeeCell";
-import TransactionImportDialog from "./TransactionImportDialog";
 import TransactionSummaryPanel from "./TransactionSummaryPanel";
 import { TableContext } from "./TransactionTableHeader";
 
@@ -159,7 +158,7 @@ export function TransactionTableTanstack({
             const formattedDate = format(date, "yyyy-MM-dd");
             updateTransactionMutation.mutate({
               id: transaction.id,
-              description: transaction.description,
+              description: transaction.description ?? "",
               amount: transaction.amount,
               type: transaction.type,
               currency: transaction.currency,
@@ -327,8 +326,6 @@ export function TransactionTableTanstack({
   return (
     <TableContext.Provider value={table}>
       <div className="space-y-4">
-        {/* Importar Dialog (composable) */}
-        <TransactionImportDialog accounts={accounts} onImport={() => {}} />
         {/* Global Filter */}
         <div className="flex items-center gap-4">
           <input

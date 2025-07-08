@@ -1,6 +1,8 @@
+import { zValidator } from "@hono/zod-validator";
 import { and, desc, eq, gte, like, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { nanoid } from "nanoid";
+import { z } from "zod";
 import { db } from "@/db";
 import {
   categories,
@@ -24,83 +26,6 @@ const recordTransactionHistory = async (
     details,
     timestamp: new Date(),
   });
-};
-
-// Helper function to find or create category
-const findOrCreateCategory = async (
-  categoryName: string | undefined,
-  userId: string,
-) => {
-  if (!categoryName || categoryName.trim() === "") {
-    // Return null for no category
-    return null;
-  }
-
-  const trimmedName = categoryName.trim();
-
-  // First try to find existing category
-  const existingCategory = await db.query.categories.findFirst({
-    where: and(eq(categories.name, trimmedName), eq(categories.userId, userId)),
-  });
-
-  if (existingCategory) {
-    return existingCategory.id;
-  }
-
-  // Create new category if it doesn't exist
-  const [newCategory] = await db
-    .insert(categories)
-    .values({
-      name: trimmedName,
-      description: null,
-      isIncome: false,
-      excludeFromBudget: false,
-      excludeFromTotals: false,
-      archived: false,
-      isGroup: false,
-      order: 0,
-      userId: userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .returning();
-
-  return newCategory.id;
-};
-
-// Helper function to find or create payee
-const findOrCreatePayee = async (
-  payeeName: string | undefined,
-  userId: string,
-) => {
-  if (!payeeName || payeeName.trim() === "") {
-    // Return null for no payee
-    return null;
-  }
-
-  const trimmedName = payeeName.trim();
-
-  // First try to find existing payee
-  const existingPayee = await db.query.payees.findFirst({
-    where: and(eq(payees.name, trimmedName), eq(payees.userId, userId)),
-  });
-
-  if (existingPayee) {
-    return existingPayee.id;
-  }
-
-  // Create new payee if it doesn't exist
-  const [newPayee] = await db
-    .insert(payees)
-    .values({
-      name: trimmedName,
-      userId: userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .returning();
-
-  return newPayee.id;
 };
 
 // Helper function to clean amount values
@@ -170,6 +95,24 @@ const parseDate = (dateStr: string): Date => {
     `Invalid date format: ${dateStr}. Expected formats: YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY`,
   );
 };
+
+// Zod schema for bulk import
+const BulkImportTransactionSchema = z.object({
+  payee: z.string().optional(),
+  amount: z.string().min(1),
+  date: z.string().min(1),
+  category: z.string().optional(),
+  type: z.enum(["income", "expense", "transfer"]),
+  userAccountId: z.string().min(1),
+  notes: z.string().optional(),
+  currency: z.string().optional(),
+  isTransfer: z.boolean().optional(),
+  transferAccountId: z.string().optional(),
+  description: z.string().optional(),
+});
+const BulkImportSchema = z.object({
+  transactions: z.array(BulkImportTransactionSchema).min(1),
+});
 
 // Router for managing transactions
 const transactionsRouter = new Hono<{ Variables: Context }>()
@@ -373,125 +316,154 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
       return c.json({ error: "Error interno del servidor" }, 500);
     }
   })
-  .post("/bulk-import", async (c) => {
-    try {
+  .post(
+    "/bulk-import",
+    zValidator("json", BulkImportSchema, (result, c) => {
+      if (!result.success) {
+        return c.json(
+          { error: "Datos inválidos", details: result.error.errors },
+          400,
+        );
+      }
+    }),
+    async (c) => {
       const user = c.get("user");
       if (!user?.id) {
         return c.json({ error: "Unauthorized" }, 401);
       }
-      const body = await c.req.json();
-      const { transactions } = body;
+      const { transactions } = c.req.valid("json");
       if (!Array.isArray(transactions) || transactions.length === 0) {
         return c.json(
           { error: "Se requiere un array de transacciones válido" },
           400,
         );
       }
-      // Validate all transactions first (no accountType or type required)
-      for (const [i, transactionData] of transactions.entries()) {
-        if (
-          transactionData.description !== undefined &&
-          typeof transactionData.description !== "string"
-        ) {
-          return c.json(
-            {
-              error: `La descripción debe ser una cadena de texto válida (índice ${i})`,
-            },
-            400,
-          );
+
+      // 2. Pre-fetch all categories and payees for the user
+      const [allCategories, allPayees] = await Promise.all([
+        db.query.categories.findMany({ where: eq(categories.userId, user.id) }),
+        db.query.payees.findMany({ where: eq(payees.userId, user.id) }),
+      ]);
+      const categoryMap = new Map(
+        allCategories.map((c) => [c.name.trim().toLowerCase(), c.id]),
+      );
+      const payeeMap = new Map(
+        allPayees.map((p) => [p.name.trim().toLowerCase(), p.id]),
+      );
+
+      // 3. Prepare new categories/payees to create
+      const newCategories = new Set<string>();
+      const newPayees = new Set<string>();
+      for (const tx of transactions) {
+        if (tx.category && !categoryMap.has(tx.category.trim().toLowerCase())) {
+          newCategories.add(tx.category.trim());
         }
-        if (
-          !transactionData.amount ||
-          typeof transactionData.amount !== "string"
-        ) {
-          return c.json(
-            {
-              error: `Se requiere un monto válido para la transacción (índice ${i})`,
-            },
-            400,
-          );
-        }
-        if (!transactionData.date || typeof transactionData.date !== "string") {
-          return c.json(
-            {
-              error: `Se requiere una fecha válida para la transacción (índice ${i})`,
-            },
-            400,
-          );
+        if (tx.payee && !payeeMap.has(tx.payee.trim().toLowerCase())) {
+          newPayees.add(tx.payee.trim());
         }
       }
-      // All valid, insert all
-      const now = new Date();
-      const createdTransactions = [];
-      for (const [i, transactionData] of transactions.entries()) {
-        try {
-          const transactionId = `txn_${nanoid(8)}`;
 
-          // Handle category lookup/creation
-          const categoryId = await findOrCreateCategory(
-            transactionData.category,
-            user.id,
-          );
-
-          // Handle payee lookup/creation
-          const payeeId = await findOrCreatePayee(
-            transactionData.payee,
-            user.id,
-          );
-
-          // Parse and validate date
-          const parsedDate = parseDate(transactionData.date);
-
-          const [createdTransaction] = await db
-            .insert(transaction)
-            .values({
-              id: transactionId,
-              type: transactionData.type || "",
-              description: transactionData.description || null,
-              amount: cleanAmount(transactionData.amount),
-              currency: transactionData.currency || "MXN",
-              date: parsedDate,
-              notes: transactionData.notes || null,
+      // 4. Bulk create new categories/payees if needed
+      if (newCategories.size > 0) {
+        const created = await db
+          .insert(categories)
+          .values(
+            Array.from(newCategories).map((name) => ({
+              name,
+              description: null,
+              isIncome: false,
+              excludeFromBudget: false,
+              excludeFromTotals: false,
+              archived: false,
+              isGroup: false,
+              order: 0,
               userId: user.id,
-              userAccountId: transactionData.userAccountId,
-              categoryId: categoryId,
-              payeeId: payeeId,
-              isTransfer: transactionData.isTransfer || false,
-              transferAccountId: transactionData.transferAccountId || null,
-              createdAt: now,
-              updatedAt: now,
-            })
-            .returning();
-          await recordTransactionHistory(transactionId, user.id, "created", {
-            description: transactionData.description,
-            amount: transactionData.amount,
-            currency: transactionData.currency || "MXN",
-            date: transactionData.date,
-            userAccountId: transactionData.userAccountId,
-            categoryId: categoryId,
-            payeeId: payeeId,
-          });
-          createdTransactions.push(createdTransaction);
-        } catch (error) {
-          console.error(`Error processing transaction at index ${i}:`, error);
-          return c.json(
-            {
-              error: `Error processing transaction at index ${i}: ${error instanceof Error ? error.message : "Unknown error"}`,
-            },
-            400,
-          );
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })),
+          )
+          .returning();
+        for (const cat of created) {
+          categoryMap.set(cat.name.trim().toLowerCase(), cat.id);
         }
       }
+      if (newPayees.size > 0) {
+        const created = await db
+          .insert(payees)
+          .values(
+            Array.from(newPayees).map((name) => ({
+              name,
+              userId: user.id,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })),
+          )
+          .returning();
+        for (const p of created) {
+          payeeMap.set(p.name.trim().toLowerCase(), p.id);
+        }
+      }
+
+      // 5. Prepare all transaction rows for bulk insert
+      const now = new Date();
+      const txRows = [];
+      for (const tx of transactions) {
+        const transactionId = `txn_${nanoid(8)}`;
+        const categoryId = tx.category
+          ? categoryMap.get(tx.category.trim().toLowerCase())
+          : null;
+        const payeeId = tx.payee
+          ? payeeMap.get(tx.payee.trim().toLowerCase())
+          : null;
+        const parsedDate = parseDate(tx.date);
+
+        txRows.push({
+          id: transactionId,
+          type: tx.type || "",
+          description: tx.description || null,
+          amount: cleanAmount(tx.amount),
+          currency: tx.currency || "MXN",
+          date: parsedDate,
+          notes: tx.notes || null,
+          userId: user.id,
+          userAccountId: tx.userAccountId,
+          categoryId,
+          payeeId,
+          isTransfer: tx.isTransfer || false,
+          transferAccountId: tx.transferAccountId || null,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      // 6. Bulk insert all transactions in a single DB call
+      const createdTransactions = await db
+        .insert(transaction)
+        .values(txRows)
+        .returning();
+
+      // 7. Optionally, record transaction history in bulk (can be optimized further)
+      await Promise.all(
+        createdTransactions.map((tx) =>
+          recordTransactionHistory(tx.id, user.id, "created", {
+            description: tx.description,
+            amount: tx.amount,
+            currency: tx.currency,
+            date: tx.date,
+            userAccountId: tx.userAccountId,
+            categoryId: tx.categoryId,
+            payeeId: tx.payeeId,
+          }),
+        ),
+      );
+
       return c.json({
         success: true,
         message: `${createdTransactions.length} transacciones importadas exitosamente`,
         transactions: createdTransactions,
       });
-    } catch (error) {
-      console.error("Error en la importación masiva de transacciones:", error);
-      return c.json({ error: "Error interno del servidor" }, 500);
-    }
-  })
+    },
+  )
   .put("/", async (c) => {
     const user = c.get("user");
 
@@ -529,16 +501,6 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
           400,
         );
       }
-
-      if (description !== undefined && typeof description !== "string") {
-        return c.json(
-          {
-            error: "La descripción debe ser una cadena de texto válida",
-          },
-          400,
-        );
-      }
-
       if (!amount || typeof amount !== "string") {
         return c.json(
           {
