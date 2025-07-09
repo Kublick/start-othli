@@ -129,7 +129,6 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         endDate,
         accountId,
         categoryId,
-
         search,
         page = "1",
         limit = "20",
@@ -227,27 +226,6 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
         return c.json(
           {
             error: "Se requiere un monto válido para la transacción",
-          },
-          400,
-        );
-      }
-
-      if (
-        !transactionData.type ||
-        !["income", "expense", "transfer"].includes(transactionData.type)
-      ) {
-        return c.json(
-          {
-            error: "Se requiere un tipo válido para la transacción",
-          },
-          400,
-        );
-      }
-
-      if (!transactionData.date || typeof transactionData.date !== "string") {
-        return c.json(
-          {
-            error: "Se requiere una fecha válida para la transacción",
           },
           400,
         );

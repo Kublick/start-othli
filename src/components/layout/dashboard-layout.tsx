@@ -7,6 +7,7 @@ import {
   LogOut,
   PiggyBank,
   Receipt,
+  Search,
   Settings,
   Target,
   User,
@@ -83,6 +84,14 @@ export default function DashboardLayout({
                         <Link to="/dashboard/overview">
                           <PiggyBank className="h-4 w-4" />
                           <span>Patrimonio</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton asChild>
+                        <Link to="/dashboard/analisis">
+                          <Search className="h-4 w-4" />
+                          <span>Analisis</span>
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>

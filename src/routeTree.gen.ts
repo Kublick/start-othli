@@ -13,6 +13,7 @@ import { createServerRootRoute } from '@tanstack/react-start/server'
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardOverviewRouteImport } from './routes/dashboard/overview'
+import { Route as DashboardAnalisisRouteImport } from './routes/dashboard/analisis'
 import { Route as ConfigCuentasRouteImport } from './routes/config/cuentas'
 import { Route as ConfigCategoriasRouteImport } from './routes/config/categorias'
 import { Route as AuthVerifyRouteImport } from './routes/auth/verify'
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
 const DashboardOverviewRoute = DashboardOverviewRouteImport.update({
   id: '/dashboard/overview',
   path: '/dashboard/overview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardAnalisisRoute = DashboardAnalisisRouteImport.update({
+  id: '/dashboard/analisis',
+  path: '/dashboard/analisis',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfigCuentasRoute = ConfigCuentasRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/auth/verify': typeof AuthVerifyRoute
   '/config/categorias': typeof ConfigCategoriasRoute
   '/config/cuentas': typeof ConfigCuentasRoute
+  '/dashboard/analisis': typeof DashboardAnalisisRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/auth/verify': typeof AuthVerifyRoute
   '/config/categorias': typeof ConfigCategoriasRoute
   '/config/cuentas': typeof ConfigCuentasRoute
+  '/dashboard/analisis': typeof DashboardAnalisisRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/auth/verify': typeof AuthVerifyRoute
   '/config/categorias': typeof ConfigCategoriasRoute
   '/config/cuentas': typeof ConfigCuentasRoute
+  '/dashboard/analisis': typeof DashboardAnalisisRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/config/categorias'
     | '/config/cuentas'
+    | '/dashboard/analisis'
     | '/dashboard/overview'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/config/categorias'
     | '/config/cuentas'
+    | '/dashboard/analisis'
     | '/dashboard/overview'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/config/categorias'
     | '/config/cuentas'
+    | '/dashboard/analisis'
     | '/dashboard/overview'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
@@ -193,6 +205,7 @@ export interface RootRouteChildren {
   AuthVerifyRoute: typeof AuthVerifyRoute
   ConfigCategoriasRoute: typeof ConfigCategoriasRoute
   ConfigCuentasRoute: typeof ConfigCuentasRoute
+  DashboardAnalisisRoute: typeof DashboardAnalisisRoute
   DashboardOverviewRoute: typeof DashboardOverviewRoute
   DashboardFinanzasImportarRoute: typeof DashboardFinanzasImportarRoute
   DashboardFinanzasPresupuestosRoute: typeof DashboardFinanzasPresupuestosRoute
@@ -234,6 +247,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard/overview'
       fullPath: '/dashboard/overview'
       preLoaderRoute: typeof DashboardOverviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/analisis': {
+      id: '/dashboard/analisis'
+      path: '/dashboard/analisis'
+      fullPath: '/dashboard/analisis'
+      preLoaderRoute: typeof DashboardAnalisisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/config/cuentas': {
@@ -329,6 +349,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthVerifyRoute: AuthVerifyRoute,
   ConfigCategoriasRoute: ConfigCategoriasRoute,
   ConfigCuentasRoute: ConfigCuentasRoute,
+  DashboardAnalisisRoute: DashboardAnalisisRoute,
   DashboardOverviewRoute: DashboardOverviewRoute,
   DashboardFinanzasImportarRoute: DashboardFinanzasImportarRoute,
   DashboardFinanzasPresupuestosRoute: DashboardFinanzasPresupuestosRoute,

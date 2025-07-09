@@ -319,3 +319,5 @@ export const useArchivedCategories = () => {
   const archivedCategories = categories.filter((cat) => cat.archived);
   return { data: archivedCategories, ...rest };
 };
+
+export { fetchCategories };

@@ -382,3 +382,5 @@ export const formatDateTime = (date: string) => {
     minute: "2-digit",
   });
 };
+
+export { fetchTransactions };
