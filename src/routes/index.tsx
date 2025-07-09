@@ -13,6 +13,7 @@ export const Route = createFileRoute("/")({
       console.log(error);
       // If session check fails, continue to index page
     }
+    throw redirect({ to: "/auth/login" });
   },
   component: App,
 });
