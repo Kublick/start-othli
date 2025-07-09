@@ -231,6 +231,8 @@ function RouteComponent() {
           budgets={budgets}
           onBudgetChange={handleBudgetChange}
         />
+
+        {/* Category Transaction Summary */}
       </div>
     </DashboardLayout>
   );

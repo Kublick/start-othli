@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 
 import { useActiveAccounts } from "@/features/dashboard/api/accounts";
+import { useBudgets } from "@/features/dashboard/api/budgets";
 import {
   useActiveCategories,
   useCreateCategories,
@@ -35,6 +36,7 @@ import {
 } from "@/features/dashboard/api/transactions";
 import TransactionImportDialog from "@/features/dashboard/components/TransactionImportDialog";
 import { TransactionSheet } from "@/features/dashboard/components/TransactionSheet";
+import TransactionSummaryPanel from "@/features/dashboard/components/TransactionSummaryPanel";
 
 import { TransactionTableTanstack } from "@/features/dashboard/components/TransactionTableTanstack";
 
@@ -56,6 +58,7 @@ function RouteComponent() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
+  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
 
   const [formData, setFormData] = useState<TransactionFormData>({
     description: "",
@@ -110,6 +113,13 @@ function RouteComponent() {
 
   const { data: accounts = [] } = useActiveAccounts();
   const { data: categories = [] } = useActiveCategories();
+  // Fetch budgets for the current month
+  const budgetFilters = {
+    year: String(currentDate.getFullYear()),
+    month: String(currentDate.getMonth() + 1).padStart(2, "0"),
+  };
+  const { data: budgetData } = useBudgets(budgetFilters);
+  const budgets = budgetData?.budgets || {};
   const createTransactionMutation = useCreateTransaction();
   const updateTransactionMutation = useUpdateTransaction();
 
@@ -193,7 +203,6 @@ function RouteComponent() {
     setFormData({
       description: transaction.description ?? undefined,
       amount: transaction.amount,
-
       currency: transaction.currency ?? "MXN",
       date: new Date(transaction.date).toISOString().split("T")[0],
       notes: transaction.notes ?? undefined,
@@ -339,43 +348,69 @@ function RouteComponent() {
           </div>
         </div>
 
-        {/* Transactions Table */}
-        <Card>
-          <CardContent className="pt-6">
-            {transactions.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="text-muted-foreground">
-                  No hay transacciones para {formatMonthYear(currentDate)}
-                  {search.accountId && (
-                    <>
-                      {" "}
-                      en{" "}
-                      {accounts.find((a) => a.id === search.accountId)?.name ||
-                        "la cuenta seleccionada"}
-                    </>
-                  )}
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={handleCreateTransaction}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Crear primera transacción
-                </Button>
-              </div>
-            ) : (
-              <TransactionTableTanstack
+        {/* Main content: Table + Summary Panel */}
+        <div className="relative flex items-start gap-6">
+          <div className="flex-1">
+            <Card>
+              <CardContent className="pt-6">
+                {transactions.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <p className="text-muted-foreground">
+                      No hay transacciones para {formatMonthYear(currentDate)}
+                      {search.accountId && (
+                        <>
+                          {" "}
+                          en{" "}
+                          {accounts.find((a) => a.id === search.accountId)
+                            ?.name || "la cuenta seleccionada"}
+                        </>
+                      )}
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={handleCreateTransaction}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Crear primera transacción
+                    </Button>
+                  </div>
+                ) : (
+                  <TransactionTableTanstack
+                    transactions={transactions}
+                    onOpenTransactionSheet={handleEditTransaction}
+                    createPayee={async (name) => {
+                      const createdPayee = await createPayee(name);
+                      return createdPayee?.id;
+                    }}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          {!summaryCollapsed && (
+            <div className="ml-6 w-80 shrink-0">
+              <TransactionSummaryPanel
                 transactions={transactions}
-                onOpenTransactionSheet={handleEditTransaction}
-                createPayee={async (name) => {
-                  const createdPayee = await createPayee(name);
-                  return createdPayee?.id;
-                }}
+                categories={categories}
+                monthLabel={formatMonthYear(currentDate)}
+                budgets={budgets}
+                collapsed={summaryCollapsed}
+                setCollapsed={setSummaryCollapsed}
               />
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
+          {summaryCollapsed && (
+            <button
+              type="button"
+              className="absolute top-4 right-0 z-50 rounded-full border bg-white p-2 shadow transition hover:bg-muted"
+              onClick={() => setSummaryCollapsed(false)}
+              aria-label="Mostrar resumen"
+            >
+              <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+            </button>
+          )}
+        </div>
 
         <TransactionSheet
           open={isSheetOpen}

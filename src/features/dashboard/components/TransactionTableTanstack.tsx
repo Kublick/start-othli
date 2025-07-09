@@ -42,7 +42,6 @@ import CategoryCell from "./CategoryCell";
 import EditableAmount from "./EditableAmount";
 import EditableDescription from "./EditableDescription";
 import PayeeCell from "./PayeeCell";
-import TransactionSummaryPanel from "./TransactionSummaryPanel";
 import { TableContext } from "./TransactionTableHeader";
 
 // Props interface for the component
@@ -314,14 +313,6 @@ export function TransactionTableTanstack({
     );
   }
 
-  // Get current month label for summary (in Spanish)
-  const monthLabel = (() => {
-    if (transactions.length === 0) return "";
-    const first = transactions[0];
-    const date = new Date(first.date);
-    return date.toLocaleString("es-ES", { month: "long", year: "numeric" });
-  })();
-
   return (
     <TableContext.Provider value={table}>
       <div className="space-y-4">
@@ -465,13 +456,6 @@ export function TransactionTableTanstack({
               </div>
             </div>
           </div>
-
-          {/* Summary Section */}
-          <TransactionSummaryPanel
-            transactions={transactions}
-            categories={categories}
-            monthLabel={monthLabel}
-          />
         </div>
       </div>
     </TableContext.Provider>
