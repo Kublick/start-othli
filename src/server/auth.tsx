@@ -69,6 +69,12 @@ export const auth = betterAuth({
       }
     },
   },
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    },
+  },
   trustedOrigins: [clientEnv.VITE_BETTER_AUTH_URL],
   plugins: [openAPI(), reactStartCookies()],
 });

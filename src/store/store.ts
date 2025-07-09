@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { clientEnv } from "@/env";
 import { authClient } from "@/lib/auth-client";
 
 type User = {
@@ -103,24 +104,44 @@ export const useAuthStore = create<
 
         loginWithGoogle: async () => {
           set({ isLoading: true, error: null }, undefined, "loginWithGoogle");
-          try {
-            // This would typically redirect to Google OAuth
-            // For now, we'll simulate it
-            window.location.href = "/api/auth/google";
-          } catch (error) {
-            set(
-              {
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : "Google authentication failed",
-                isLoading: false,
+
+          const url = `${clientEnv.VITE_BETTER_AUTH_URL}/dashboard/overview`;
+          await authClient.signIn.social(
+            {
+              provider: "google",
+              callbackURL: url,
+            },
+            {
+              onSuccess: (session) => {
+                if (session.data.user) {
+                  set(
+                    {
+                      user: {
+                        id: session.data.user.id,
+                        email: session.data.user.email,
+                        name: session.data.user.name,
+                        image: session.data.user.image,
+                      },
+                      isAuthenticated: true,
+                      isLoading: false,
+                    },
+                    undefined,
+                    "loginWithGoogleSucesss",
+                  );
+                }
               },
-              undefined,
-              "loginWithGoogle-failed",
-            );
-            throw error;
-          }
+              onError: (ctx) => {
+                set(
+                  {
+                    error: ctx.error.messsage || "Google Auth Failed",
+                    isLoading: false,
+                  },
+                  undefined,
+                  "loginWithGoogleFailed",
+                );
+              },
+            },
+          );
         },
 
         logout: async () => {
