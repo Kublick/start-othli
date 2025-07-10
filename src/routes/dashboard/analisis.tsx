@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { fetchCategories } from "@/features/dashboard/api/categories";
-import { fetchTransactions } from "@/features/dashboard/api/transactions";
-import AnalisisComponent from "@/features/dashboard/components/analisis-component";
+import DashboardLayout from "@/components/layout/dashboard-layout";
+import {
+  fetchCategories,
+  useActiveCategories,
+} from "@/features/dashboard/api/categories";
+import {
+  fetchTransactions,
+  useTransactions,
+} from "@/features/dashboard/api/transactions";
+import SortableTableExample from "@/features/dashboard/components/analisis-table";
 import { queryClient } from "@/integrations/tanstack-query/root-provider";
 
 function getLastSixMonths() {
@@ -39,12 +46,17 @@ export const Route = createFileRoute("/dashboard/analisis")({
   },
   component: RouteComponent,
 });
-
 function RouteComponent() {
-  // The months array is available as loader data
+  const { data: categories = [] } = useActiveCategories();
+  const { data } = useTransactions({});
+  const transactions = data?.transactions || [];
+
   return (
-    <div>
-      <AnalisisComponent />
-    </div>
+    <DashboardLayout title="Análisis de Categorías">
+      <SortableTableExample
+        categories={categories}
+        transactions={transactions}
+      />
+    </DashboardLayout>
   );
 }

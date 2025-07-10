@@ -1,9 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+
 import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: async () => {
-    // Check if user is authenticated by verifying session
+  loader: async () => {
     try {
       const session = await authClient.getSession();
       if (session?.data?.user) {
@@ -11,7 +11,6 @@ export const Route = createFileRoute("/")({
       }
     } catch (error) {
       console.log(error);
-      // If session check fails, continue to index page
     }
     throw redirect({ to: "/auth/login" });
   },
