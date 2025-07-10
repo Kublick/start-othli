@@ -9,6 +9,8 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(
         headers: getHeaders() as HeadersInit,
       },
     });
+
+    console.log("🚀 ~ session:", session);
     return await next({
       context: {
         user: {

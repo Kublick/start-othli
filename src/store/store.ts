@@ -104,32 +104,13 @@ export const useAuthStore = create<
 
         loginWithGoogle: async () => {
           set({ isLoading: true, error: null }, undefined, "loginWithGoogle");
+          console.log("logging in");
 
-          const url = `${clientEnv.VITE_BETTER_AUTH_URL}/dashboard/overview`;
-          await authClient.signIn.social(
+          const { data } = await authClient.signIn.social(
             {
               provider: "google",
-              callbackURL: url,
             },
             {
-              onSuccess: (session) => {
-                if (session.data.user) {
-                  set(
-                    {
-                      user: {
-                        id: session.data.user.id,
-                        email: session.data.user.email,
-                        name: session.data.user.name,
-                        image: session.data.user.image,
-                      },
-                      isAuthenticated: true,
-                      isLoading: false,
-                    },
-                    undefined,
-                    "loginWithGoogleSucesss",
-                  );
-                }
-              },
               onError: (ctx) => {
                 set(
                   {
@@ -142,6 +123,7 @@ export const useAuthStore = create<
               },
             },
           );
+          console.log("data", data);
         },
 
         logout: async () => {
@@ -187,7 +169,6 @@ export const useAuthStore = create<
                 undefined,
                 "checkAuth-authenticated",
               );
-              // Account creation is now handled by the setup wizard
             } else {
               set(
                 {
