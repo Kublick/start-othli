@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+
 import DashboardLayout from "@/components/layout/dashboard-layout";
+
 import {
   fetchCategories,
   useActiveCategories,
@@ -9,6 +11,7 @@ import {
   useTransactions,
 } from "@/features/dashboard/api/transactions";
 import SortableTableExample from "@/features/dashboard/components/analisis-table";
+
 import { queryClient } from "@/integrations/tanstack-query/root-provider";
 
 function getLastSixMonths() {
@@ -46,6 +49,7 @@ export const Route = createFileRoute("/dashboard/analisis")({
   },
   component: RouteComponent,
 });
+
 function RouteComponent() {
   const { data: categories = [] } = useActiveCategories();
   const { data } = useTransactions({});

@@ -1,7 +1,6 @@
 import { toast } from "sonner";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import { clientEnv } from "@/env";
 import { authClient } from "@/lib/auth-client";
 
 type User = {

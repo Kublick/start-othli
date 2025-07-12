@@ -134,7 +134,7 @@ const financialAccountRouter = new Hono<{ Variables: Context }>()
       const [createdAccount] = await db
         .insert(userAccount)
         .values({
-          id: `acc_${user.id}_${Date.now()}_${Math.random()}`,
+          id: `acc_${nanoid(6)}`,
           name: accountData.name,
           type: accountTypeMapping[accountData.type],
           balance: accountData.balance || "0.00",

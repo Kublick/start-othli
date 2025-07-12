@@ -25,7 +25,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { Category } from "@/features/dashboard/api/categories";
 import type { Transaction } from "@/features/dashboard/api/transactions";
 
@@ -50,9 +57,6 @@ type RowData = {
   // For each date period: value
   [dateKey: string]: number | string | undefined;
 };
-
-// Custom meta type for sticky columns
-type StickyMeta = { sticky?: "left" | "right" };
 
 // Reusable component for currency cells
 const CurrencyCell: React.FC<{ value: unknown }> = ({ value }) => {
@@ -105,9 +109,6 @@ function renderCountCell(value: unknown) {
   if (value === "-") return <span className="text-muted-foreground">-</span>;
   return <span className="font-mono">{value as number}</span>;
 }
-
-// Define a constant width for summary columns
-const SUMMARY_COL_WIDTH = 120;
 
 export default function AnalisisTable({
   categories,
@@ -332,27 +333,24 @@ export default function AnalisisTable({
     // Extra columns (summary section)
     const extraColumns: ColumnDef<RowData>[] = [
       {
-        accessorKey: "total",
-        header: () => <span>Total</span>,
-        cell: (info) => <CurrencyCell value={info.getValue()} />,
-        enableSorting: true,
-        sortingFn: numericSort,
-        meta: { sticky: "right" },
-      },
-      {
         accessorKey: "average",
         header: () => <span>Promedio</span>,
         cell: (info) => <CurrencyCell value={info.getValue()} />,
         enableSorting: true,
         sortingFn: numericSort,
-        meta: { sticky: "right" },
+      },
+      {
+        accessorKey: "total",
+        header: () => <span>Total</span>,
+        cell: (info) => <CurrencyCell value={info.getValue()} />,
+        enableSorting: true,
+        sortingFn: numericSort,
       },
       {
         accessorKey: "count",
-        header: () => <span>Transacciones</span>,
+        header: () => <span>#</span>,
         cell: (info) => renderCountCell(info.getValue()),
         enableSorting: false,
-        meta: { sticky: "right" },
       },
     ];
 
@@ -363,7 +361,6 @@ export default function AnalisisTable({
         header: "Categoría",
         cell: (info) => info.getValue(),
         enableSorting: true,
-        meta: { sticky: "left" },
       },
     ];
 
@@ -391,158 +388,66 @@ export default function AnalisisTable({
   return (
     <div>
       {dateSelector}
-      <div className="relative mx-auto max-w-screen-2xl overflow-hidden rounded-lg border text-sm">
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full border-collapse bg-white text-sm">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header, colIdx) => {
-                    const sticky = (header.column.columnDef.meta as StickyMeta)
-                      ?.sticky;
-                    let style: React.CSSProperties = {
-                      minWidth: 120,
-                      maxWidth: 180,
-                    };
-                    if (sticky === "right") {
-                      // Calculate position for right-sticky columns (reverse order)
-                      const rightStickyHeaders = headerGroup.headers.filter(
-                        (h) =>
-                          (h.column.columnDef.meta as StickyMeta)?.sticky ===
-                          "right",
-                      );
-                      const rightIndex =
-                        rightStickyHeaders.length -
-                        1 -
-                        rightStickyHeaders.findIndex((h) => h.id === header.id);
-                      const rightOffset = rightIndex * SUMMARY_COL_WIDTH;
-
-                      style = {
-                        ...style,
-                        position: "sticky",
-                        right: `${rightOffset}px`,
-                        zIndex: 30,
-                        backgroundColor: "white",
-                        boxShadow: "-2px 0 4px -2px rgba(0,0,0,0.1)",
-                      };
-                    } else if (sticky === "left") {
-                      style = {
-                        ...style,
-                        position: "sticky",
-                        left: 0,
-                        zIndex: 20,
-                        backgroundColor: "white",
-                        boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
-                      };
-                    }
-
-                    // Add left border to summary columns
-                    const isSummary =
-                      header.column.id === "total" ||
-                      header.column.id === "average" ||
-                      header.column.id === "count";
-
-                    const isFirstCol = colIdx === 0;
-                    return (
-                      <th
-                        key={header.id}
-                        onClick={header.column.getToggleSortingHandler()}
-                        className={`cursor-pointer select-none border px-2 py-1${isSummary ? " border-l" : ""} overflow-hidden truncate whitespace-nowrap ${isFirstCol ? "bg-gray-100" : ""} bg-gray-50`}
-                        style={style}
-                      >
-                        <span className="inline-flex items-center gap-1">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                          {header.column.getIsSorted() === "asc" && (
-                            <ChevronUp className="h-3 w-3" />
-                          )}
-                          {header.column.getIsSorted() === "desc" && (
-                            <ChevronDown className="h-3 w-3" />
-                          )}
-                        </span>
-                      </th>
-                    );
-                  })}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id}>
-                  {row.getVisibleCells().map((cell, colIdx, arr) => {
-                    const sticky = (cell.column.columnDef.meta as StickyMeta)
-                      ?.sticky;
-                    let style: React.CSSProperties = {
-                      minWidth: 120,
-                      maxWidth: 180,
-                    };
-                    if (sticky === "right") {
-                      // Calculate position for right-sticky columns (reverse order)
-                      const rightStickyCells = row
-                        .getVisibleCells()
-                        .filter(
-                          (c) =>
-                            (c.column.columnDef.meta as StickyMeta)?.sticky ===
-                            "right",
-                        );
-                      const rightIndex =
-                        rightStickyCells.length -
-                        1 -
-                        rightStickyCells.findIndex((c) => c.id === cell.id);
-                      const rightOffset = rightIndex * SUMMARY_COL_WIDTH;
-
-                      style = {
-                        ...style,
-                        position: "sticky",
-                        right: `${rightOffset}px`,
-                        zIndex: 10,
-                        backgroundColor: "white",
-                        boxShadow: "-2px 0 4px -2px rgba(0,0,0,0.1)",
-                      };
-                    } else if (sticky === "left") {
-                      style = {
-                        ...style,
-                        position: "sticky",
-                        left: 0,
-                        zIndex: 10,
-                        backgroundColor: "white",
-                        boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
-                      };
-                    }
-
-                    // Add left border to summary columns
-                    const isSummary =
-                      cell.column.id === "total" ||
-                      cell.column.id === "average" ||
-                      cell.column.id === "count";
-
-                    const isFirstCol = colIdx === 0;
-                    // Align numeric columns to the left
-                    const isNumeric =
-                      cell.column.id === "count" ||
-                      cell.column.id === "total" ||
-                      cell.column.id === "average" ||
-                      datePeriods.some((p) => p.key === cell.column.id);
-                    return (
-                      <td
-                        key={cell.id}
-                        className={`border px-2 py-1${isSummary ? " border-l" : ""} overflow-hidden truncate whitespace-nowrap ${isFirstCol ? "bg-gray-100" : ""} ${isNumeric ? "text-right" : ""}`}
-                        style={style}
-                      >
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  // Add left border to summary columns
+                  const isSummary =
+                    header.column.id === "average" ||
+                    header.column.id === "total" ||
+                    header.column.id === "count";
+                  return (
+                    <TableHead
+                      key={header.id}
+                      onClick={header.column.getToggleSortingHandler()}
+                      className={`cursor-pointer select-none${isSummary ? " border-l pl-2" : ""}`}
+                    >
+                      <span className="inline-flex items-center gap-1">
                         {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
+                          header.column.columnDef.header,
+                          header.getContext(),
                         )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                        {header.column.getIsSorted() === "asc" && (
+                          <ChevronUp className="h-3 w-3" />
+                        )}
+                        {header.column.getIsSorted() === "desc" && (
+                          <ChevronDown className="h-3 w-3" />
+                        )}
+                      </span>
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => {
+                  // Add left border to summary columns
+                  const isSummary =
+                    cell.column.id === "average" ||
+                    cell.column.id === "total" ||
+                    cell.column.id === "count";
+                  return (
+                    <TableCell
+                      key={cell.id}
+                      className={isSummary ? "border-l" : undefined}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
