@@ -74,7 +74,6 @@ export default function DashboardLayout({
 
   return (
     <AuthSyncProvider>
-      {/* TopNavBar for mobile/tablet (below 2xl/1400px) */}
       <div className="2xl:hidden">
         <TopNavBar />
       </div>

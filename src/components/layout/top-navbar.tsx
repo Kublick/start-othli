@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: No new languages will be implemented */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: No new languages will be impl */
 import { Link } from "@tanstack/react-router";
 import {
   BarChart3,
@@ -81,7 +81,7 @@ export default function TopNavBar() {
   const handleClose = () => setOpenDropdown(null);
 
   return (
-    <nav className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm xl:hidden">
+    <nav className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm ">
       <div className="flex items-center gap-4">
         <span className="font-semibold text-lg">Ometomi</span>
         <div className="flex gap-1">
