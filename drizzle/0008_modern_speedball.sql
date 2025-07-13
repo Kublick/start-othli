@@ -1,0 +1,2 @@
+ALTER TABLE "transaction" ADD COLUMN "recurring_transaction_id" text;--> statement-breakpoint
+ALTER TABLE "transaction" ADD CONSTRAINT "transaction_recurring_transaction_id_recurring_transaction_id_fk" FOREIGN KEY ("recurring_transaction_id") REFERENCES "public"."recurring_transaction"("id") ON DELETE set null ON UPDATE no action;

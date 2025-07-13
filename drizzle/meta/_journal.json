@@ -57,6 +57,13 @@
       "when": 1752004762245,
       "tag": "0007_needy_lilith",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1752443730660,
+      "tag": "0008_modern_speedball",
+      "breakpoints": true
     }
   ]
 }

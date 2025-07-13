@@ -210,6 +210,11 @@ export const transaction = pgTable("transaction", {
       onDelete: "set null",
     },
   ),
+  // New field for linking to recurring transactions
+  recurringTransactionId: text("recurring_transaction_id").references(
+    () => recurringTransaction.id,
+    { onDelete: "set null" },
+  ),
 });
 
 export const transactionHistory = pgTable("transaction_history", {
