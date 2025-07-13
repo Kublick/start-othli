@@ -8,11 +8,15 @@ import type {
 const EditableDescription = ({
   transaction,
   onUpdate,
+  className,
+  width,
 }: {
   transaction: Transaction;
   onUpdate: (data: UpdateTransactionData) => void;
+  className?: string;
+  width?: number;
 }) => {
-  const [value, setValue] = useState(transaction.description);
+  const [value, setValue] = useState(transaction.description || "");
   const [isEditing, setIsEditing] = useState(false);
 
   const handleBlur = () => {
@@ -34,7 +38,7 @@ const EditableDescription = ({
     if (e.key === "Enter") {
       e.currentTarget.blur();
     } else if (e.key === "Escape") {
-      setValue(transaction.description);
+      setValue(transaction.description || "");
       setIsEditing(false);
     }
   };
@@ -42,8 +46,9 @@ const EditableDescription = ({
   if (isEditing) {
     return (
       <input
-        className="w-full rounded border px-2 py-1 text-sm"
-        value={value}
+        className={`overflow-hidden truncate whitespace-nowrap rounded border px-2 py-1 text-sm ${className || ""}`}
+        style={width ? { width } : undefined}
+        value={value || ""}
         onChange={(e) => setValue(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
@@ -54,7 +59,7 @@ const EditableDescription = ({
   return (
     <button
       type="button"
-      className="w-full cursor-pointer rounded p-1 text-left hover:bg-muted/50"
+      className={`w-full cursor-pointer rounded p-1 text-left hover:bg-muted/50 ${className || ""}`}
       onClick={() => setIsEditing(true)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {

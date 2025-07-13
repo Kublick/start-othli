@@ -67,9 +67,11 @@ const formatDate = (dateString: string) => {
 function SortableHeader({
   columnId,
   children,
+  width,
 }: {
   columnId: string;
   children: React.ReactNode;
+  width?: number;
 }) {
   const table = useReactTableContext();
   const column = table.getColumn(columnId);
@@ -77,11 +79,12 @@ function SortableHeader({
   return (
     <button
       type="button"
-      className="group flex items-center gap-1 rounded border border-transparent px-2 py-1 font-semibold text-muted-foreground text-xs uppercase tracking-wide transition hover:border-primary/20 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+      className="group inline-flex items-center gap-1 truncate rounded border border-transparent px-2 py-1 font-semibold text-muted-foreground text-xs uppercase tracking-wide transition hover:border-primary/20 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+      style={width ? { width, minWidth: width, maxWidth: width } : undefined}
       onClick={() => column?.toggleSorting(isSorted === "asc")}
       tabIndex={0}
     >
-      {children}
+      <span className="truncate">{children}</span>
       {isSorted === "asc" ? (
         <ChevronUp className="h-3 w-3 text-primary" />
       ) : isSorted === "desc" ? (
@@ -148,6 +151,7 @@ export function TransactionTableTanstack({
     columnHelper.accessor("date", {
       header: () => <SortableHeader columnId="date">Fecha</SortableHeader>,
       enableSorting: true,
+
       cell: ({ row }) => {
         const transaction = row.original;
         const currentDate = transaction.date;
@@ -194,11 +198,14 @@ export function TransactionTableTanstack({
           </Popover>
         );
       },
+      size: 120,
     }),
     // Category column with MyCombobox
     columnHelper.accessor("categoryId", {
       header: () => (
-        <SortableHeader columnId="categoryId">Categoría</SortableHeader>
+        <SortableHeader columnId="categoryId" width={120}>
+          Categoría
+        </SortableHeader>
       ),
       enableSorting: true,
       cell: ({ row }) => (
@@ -209,34 +216,44 @@ export function TransactionTableTanstack({
           updateTransactionMutation={updateTransactionMutation}
         />
       ),
+      size: 120,
     }),
     // Payee column with MyCombobox
     columnHelper.accessor("payeeId", {
       header: () => (
-        <SortableHeader columnId="payeeId">Beneficiario</SortableHeader>
+        <SortableHeader columnId="payeeId" width={120}>
+          Beneficiario
+        </SortableHeader>
       ),
       enableSorting: true,
       cell: ({ row }) => (
-        <PayeeCell
-          transaction={row.original}
-          payees={payees}
-          createPayee={createPayee}
-          updateTransactionMutation={updateTransactionMutation}
-        />
+        <div className="overflow-hidden truncate whitespace-nowrap">
+          <PayeeCell
+            transaction={row.original}
+            payees={payees}
+            createPayee={createPayee}
+            updateTransactionMutation={updateTransactionMutation}
+          />
+        </div>
       ),
+      size: 120,
     }),
     // Description column with inline editing
     columnHelper.accessor("description", {
       header: () => (
-        <SortableHeader columnId="description">Descripción</SortableHeader>
+        <SortableHeader columnId="description" width={120}>
+          Descripción
+        </SortableHeader>
       ),
       enableSorting: true,
       cell: ({ row }) => (
         <EditableDescription
           transaction={row.original}
           onUpdate={(data) => updateTransactionMutation.mutate(data)}
+          className="overflow-hidden truncate whitespace-nowrap"
         />
       ),
+      size: 120,
     }),
     // Account column with MyCombobox
     columnHelper.accessor("userAccountId", {
@@ -251,36 +268,46 @@ export function TransactionTableTanstack({
           updateTransactionMutation={updateTransactionMutation}
         />
       ),
+      size: 100,
     }),
     // Amount column with inline editing
     columnHelper.accessor("amount", {
-      header: () => <SortableHeader columnId="amount">Monto</SortableHeader>,
+      header: () => (
+        <SortableHeader columnId="amount">
+          <span className="inline-block w-16 md:w-20">Monto</span>
+        </SortableHeader>
+      ),
       enableSorting: true,
       cell: ({ row }) => (
-        <EditableAmount
-          transaction={row.original}
-          onUpdate={(data) => updateTransactionMutation.mutate(data)}
-        />
+        <div className="w-16 overflow-hidden truncate whitespace-nowrap md:w-20">
+          <EditableAmount
+            transaction={row.original}
+            onUpdate={(data) => updateTransactionMutation.mutate(data)}
+          />
+        </div>
       ),
+      size: 100,
     }),
     // Actions column
     columnHelper.display({
       id: "actions",
-      header: "",
-      size: 40,
+      header: () => <span className="inline-block w-12" />,
       cell: ({ row }) => {
         const transaction = row.original;
         return (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onOpenTransactionSheet(transaction)}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="w-12 text-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenTransactionSheet(transaction)}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         );
       },
+      size: 60,
     }),
   ];
 
@@ -326,29 +353,31 @@ export function TransactionTableTanstack({
           />
         </div>
         {/* Table and Summary Layout */}
-        <div className="flex gap-6">
+        <div className="flex gap-2">
           {/* Table Section */}
-          <div className="flex-1 space-y-4 overflow-x-auto">
-            <div className="min-w-[700px] rounded-md border">
-              <Table className="min-w-full" style={{ tableLayout: "auto" }}>
+          <div className="w-full overflow-x-auto">
+            <div className="w-full rounded-md border">
+              <Table className="w-full text-sm" style={{ tableLayout: "auto" }}>
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => {
-                        return (
-                          <TableHead
-                            key={header.id}
-                            style={{ width: `${header.getSize()}px` }} // Use the size from columnDef
-                          >
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext(),
-                                )}
-                          </TableHead>
-                        );
-                      })}
+                      {headerGroup.headers.map((header) => (
+                        <TableHead
+                          key={header.id}
+                          style={{
+                            width: `${header.column.getSize()}px`,
+                            minWidth: `${header.column.getSize()}px`,
+                            maxWidth: `${header.column.getSize()}px`,
+                          }}
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TableHead>
+                      ))}
                     </TableRow>
                   ))}
                 </TableHeader>
@@ -362,7 +391,11 @@ export function TransactionTableTanstack({
                         {row.getVisibleCells().map((cell) => (
                           <TableCell
                             key={cell.id}
-                            style={{ width: `${cell.column.getSize()}px` }}
+                            style={{
+                              width: `${cell.column.getSize()}px`,
+                              minWidth: `${cell.column.getSize()}px`,
+                              maxWidth: `${cell.column.getSize()}px`,
+                            }}
                           >
                             {flexRender(
                               cell.column.columnDef.cell,

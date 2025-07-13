@@ -9,16 +9,17 @@ import "./styles.css";
 
 // Create a new router instance
 export const createRouter = () => {
+  const queryClient = TanstackQuery.createQueryClient();
   const router = routerWithQueryClient(
     createTanstackRouter({
       routeTree,
       context: {
-        ...TanstackQuery.getContext(),
+        queryClient,
       },
       scrollRestoration: true,
       defaultPreloadStaleTime: 0,
     }),
-    TanstackQuery.getContext().queryClient,
+    queryClient,
   );
 
   return router;

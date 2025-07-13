@@ -232,7 +232,11 @@ export default function DashboardLayout({
               <h1 className="font-semibold text-lg">{title}</h1>
             </div>
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div className="mx-auto w-full max-w-full px-2 sm:max-w-screen-md sm:px-4 md:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-screen-2xl">
+              {children}
+            </div>
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </AuthSyncProvider>

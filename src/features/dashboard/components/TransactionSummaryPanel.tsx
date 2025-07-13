@@ -139,7 +139,7 @@ function TransactionSummaryPanel({
   }
 
   return (
-    <div className="relative flex w-80 min-w-[18rem] max-w-xs flex-col gap-2 rounded-xl border bg-white p-4 shadow">
+    <div className="relative flex w-[260px] min-w-[260px] max-w-[260px] flex-col gap-2 rounded-xl border bg-white p-4 shadow">
       {/* Header with collapse button */}
       <div className="mb-2 flex items-center justify-between">
         <span className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">

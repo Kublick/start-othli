@@ -350,46 +350,42 @@ function RouteComponent() {
 
         {/* Main content: Table + Summary Panel */}
         <div className="relative flex items-start gap-6">
-          <div className="flex-1">
-            <Card>
-              <CardContent className="pt-6">
-                {transactions.length === 0 ? (
-                  <div className="py-8 text-center">
-                    <p className="text-muted-foreground">
-                      No hay transacciones para {formatMonthYear(currentDate)}
-                      {search.accountId && (
-                        <>
-                          {" "}
-                          en{" "}
-                          {accounts.find((a) => a.id === search.accountId)
-                            ?.name || "la cuenta seleccionada"}
-                        </>
-                      )}
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="mt-4"
-                      onClick={handleCreateTransaction}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Crear primera transacción
-                    </Button>
-                  </div>
-                ) : (
-                  <TransactionTableTanstack
-                    transactions={transactions}
-                    onOpenTransactionSheet={handleEditTransaction}
-                    createPayee={async (name) => {
-                      const createdPayee = await createPayee(name);
-                      return createdPayee?.id;
-                    }}
-                  />
-                )}
-              </CardContent>
-            </Card>
+          <div className="w-full min-w-0 flex-1 overflow-x-auto">
+            {transactions.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-muted-foreground">
+                  No hay transacciones para {formatMonthYear(currentDate)}
+                  {search.accountId && (
+                    <>
+                      {" "}
+                      en{" "}
+                      {accounts.find((a) => a.id === search.accountId)?.name ||
+                        "la cuenta seleccionada"}
+                    </>
+                  )}
+                </p>
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={handleCreateTransaction}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Crear primera transacción
+                </Button>
+              </div>
+            ) : (
+              <TransactionTableTanstack
+                transactions={transactions}
+                onOpenTransactionSheet={handleEditTransaction}
+                createPayee={async (name) => {
+                  const createdPayee = await createPayee(name);
+                  return createdPayee?.id;
+                }}
+              />
+            )}
           </div>
           {!summaryCollapsed && (
-            <div className="ml-6 w-80 shrink-0">
+            <div className="ml-6 ">
               <TransactionSummaryPanel
                 transactions={transactions}
                 categories={categories}

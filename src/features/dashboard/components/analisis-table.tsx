@@ -322,10 +322,11 @@ export default function AnalisisTable({
     const createDateColumns = (): ColumnDef<RowData>[] => {
       return datePeriods.map((period) => ({
         accessorKey: period.key,
-        header: period.label,
+        header: period.label, // No calendar icon, just the label
         cell: (info) => <CurrencyCell value={info.getValue()} />,
         enableSorting: true,
         sortingFn: numericSort,
+        meta: { width: 90 }, // Custom meta for width
       }));
     };
 
@@ -400,10 +401,13 @@ export default function AnalisisTable({
                   {headerGroup.headers.map((header, colIdx) => {
                     const sticky = (header.column.columnDef.meta as StickyMeta)
                       ?.sticky;
-                    let style: React.CSSProperties = {
-                      minWidth: 120,
-                      maxWidth: 180,
-                    };
+                    // Set width for date columns
+                    let style: React.CSSProperties = {};
+                    if ((header.column.columnDef.meta as any)?.width === 90) {
+                      style = { minWidth: 90, maxWidth: 90 };
+                    } else {
+                      style = { minWidth: 120, maxWidth: 180 };
+                    }
                     if (sticky === "right") {
                       // Calculate position for right-sticky columns (reverse order)
                       const rightStickyHeaders = headerGroup.headers.filter(
@@ -474,10 +478,13 @@ export default function AnalisisTable({
                   {row.getVisibleCells().map((cell, colIdx, arr) => {
                     const sticky = (cell.column.columnDef.meta as StickyMeta)
                       ?.sticky;
-                    let style: React.CSSProperties = {
-                      minWidth: 120,
-                      maxWidth: 180,
-                    };
+                    // Set width for date columns
+                    let style: React.CSSProperties = {};
+                    if ((cell.column.columnDef.meta as any)?.width === 90) {
+                      style = { minWidth: 90, maxWidth: 90 };
+                    } else {
+                      style = { minWidth: 120, maxWidth: 180 };
+                    }
                     if (sticky === "right") {
                       // Calculate position for right-sticky columns (reverse order)
                       const rightStickyCells = row
