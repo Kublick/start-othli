@@ -52,7 +52,7 @@ type RowData = {
 };
 
 // Custom meta type for sticky columns
-type StickyMeta = { sticky?: "left" | "right" };
+type StickyMeta = { sticky?: "left" | "right"; width?: number };
 
 // Reusable component for currency cells
 const CurrencyCell: React.FC<{ value: unknown }> = ({ value }) => {
@@ -403,7 +403,9 @@ export default function AnalisisTable({
                       ?.sticky;
                     // Set width for date columns
                     let style: React.CSSProperties = {};
-                    if ((header.column.columnDef.meta as any)?.width === 90) {
+                    if (
+                      (header.column.columnDef.meta as StickyMeta)?.width === 90
+                    ) {
                       style = { minWidth: 90, maxWidth: 90 };
                     } else {
                       style = { minWidth: 120, maxWidth: 180 };
@@ -475,12 +477,14 @@ export default function AnalisisTable({
             <tbody>
               {table.getRowModel().rows.map((row) => (
                 <tr key={row.id}>
-                  {row.getVisibleCells().map((cell, colIdx, arr) => {
+                  {row.getVisibleCells().map((cell, colIdx) => {
                     const sticky = (cell.column.columnDef.meta as StickyMeta)
                       ?.sticky;
                     // Set width for date columns
                     let style: React.CSSProperties = {};
-                    if ((cell.column.columnDef.meta as any)?.width === 90) {
+                    if (
+                      (cell.column.columnDef.meta as StickyMeta)?.width === 90
+                    ) {
                       style = { minWidth: 90, maxWidth: 90 };
                     } else {
                       style = { minWidth: 120, maxWidth: 180 };

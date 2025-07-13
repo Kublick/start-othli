@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useSession } from "@/hooks/use-session";
 import { useAuthStore } from "@/store/store";
+import TopNavBar from "./top-navbar";
 
 interface DashboardLayoutProps {
   children?: React.ReactNode;
@@ -73,157 +74,164 @@ export default function DashboardLayout({
 
   return (
     <AuthSyncProvider>
+      {/* TopNavBar for mobile/tablet (below 2xl/1400px) */}
+      <div className="2xl:hidden">
+        <TopNavBar />
+      </div>
+      {/* Sidebar for 2xl and above */}
       <SidebarProvider>
-        <Sidebar>
-          <SidebarHeader>
-            <div className="flex h-16 items-center px-4">
-              <h2 className="font-semibold text-lg">Ometomi</h2>
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>Navegación</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link to="/dashboard/overview">
-                        <Home className="h-4 w-4" />
-                        <span>Home</span>
-                      </Link>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <Link to="/dashboard/overview">
-                            <BarChart3 className="h-4 w-4" />
-                            <span>Resumen</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <Link to="/dashboard/overview">
-                            <PiggyBank className="h-4 w-4" />
-                            <span>Patrimonio</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <Link to="/dashboard/analisis">
-                            <Search className="h-4 w-4" />
-                            <span>Analisis</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link to="/config/categorias">
-                        <Settings className="h-4 w-4" />
-                        <span>Configuración</span>
-                      </Link>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <Link to="/config/cuentas">
-                            <User className="h-4 w-4" />
-                            <span>Cuentas</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <Link to="/config/categorias">
-                            <FileText className="h-4 w-4" />
-                            <span>Categorías</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
-
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <Link to="/dashboard/overview">
-                        <CreditCard className="h-4 w-4" />
-                        <span>Finanzas</span>
-                      </Link>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <Link
-                            to="/dashboard/finanzas/presupuestos"
-                            search={{
-                              year: currentYear,
-                              month: currentMonth,
-                            }}
-                          >
-                            <Target className="h-4 w-4" />
-                            <span>Presupuesto</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild>
-                          <Link
-                            to="/dashboard/finanzas/transacciones"
-                            search={{
-                              year: currentYear,
-                              month: currentMonth,
-                              accountId: undefined, // Always include the key, even if you don't have a value
-                            }}
-                          >
-                            <Receipt className="h-4 w-4" />
-                            <span>Transacciones</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter>
-            <div className="flex flex-col gap-2 p-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage
-                    src={user?.image || "/avatar_image.png"}
-                    alt={user?.name || "User"}
-                  />
-                  <AvatarFallback>
-                    {user?.name?.[0] || user?.email?.[0] || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-sm">
-                    {user?.name || "Usuario"}
-                  </p>
-                  <p className="truncate text-muted-foreground text-xs">
-                    {user?.email || "usuario@example.com"}
-                  </p>
-                </div>
+        <div className="hidden 2xl:block">
+          <Sidebar>
+            <SidebarHeader>
+              <div className="flex h-16 items-center px-4">
+                <h2 className="font-semibold text-lg">Ometomi</h2>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start"
-                onClick={logout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Cerrar Sesión</span>
-              </Button>
-            </div>
-          </SidebarFooter>
-        </Sidebar>
+            </SidebarHeader>
+            <SidebarContent>
+              <SidebarGroup>
+                <SidebarGroupLabel>Navegación</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <Link to="/dashboard/overview">
+                          <Home className="h-4 w-4" />
+                          <span>Home</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link to="/dashboard/overview">
+                              <BarChart3 className="h-4 w-4" />
+                              <span>Resumen</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link to="/dashboard/overview">
+                              <PiggyBank className="h-4 w-4" />
+                              <span>Patrimonio</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link to="/dashboard/analisis">
+                              <Search className="h-4 w-4" />
+                              <span>Analisis</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <Link to="/config/categorias">
+                          <Settings className="h-4 w-4" />
+                          <span>Configuración</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link to="/config/cuentas">
+                              <User className="h-4 w-4" />
+                              <span>Cuentas</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link to="/config/categorias">
+                              <FileText className="h-4 w-4" />
+                              <span>Categorías</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild>
+                        <Link to="/dashboard/overview">
+                          <CreditCard className="h-4 w-4" />
+                          <span>Finanzas</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link
+                              to="/dashboard/finanzas/presupuestos"
+                              search={{
+                                year: currentYear,
+                                month: currentMonth,
+                              }}
+                            >
+                              <Target className="h-4 w-4" />
+                              <span>Presupuesto</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link
+                              to="/dashboard/finanzas/transacciones"
+                              search={{
+                                year: currentYear,
+                                month: currentMonth,
+                                accountId: undefined, // Always include the key, even if you don't have a value
+                              }}
+                            >
+                              <Receipt className="h-4 w-4" />
+                              <span>Transacciones</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      </SidebarMenuSub>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </SidebarContent>
+            <SidebarFooter>
+              <div className="flex flex-col gap-2 p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src={user?.image || "/avatar_image.png"}
+                      alt={user?.name || "User"}
+                    />
+                    <AvatarFallback>
+                      {user?.name?.[0] || user?.email?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-sm">
+                      {user?.name || "Usuario"}
+                    </p>
+                    <p className="truncate text-muted-foreground text-xs">
+                      {user?.email || "usuario@example.com"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={logout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Cerrar Sesión</span>
+                </Button>
+              </div>
+            </SidebarFooter>
+          </Sidebar>
+        </div>
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
             <div className="flex items-center gap-2 px-4">
