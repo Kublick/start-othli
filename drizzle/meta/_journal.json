@@ -64,6 +64,27 @@
       "when": 1752443730660,
       "tag": "0008_modern_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1752769205801,
+      "tag": "0009_milky_magik",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1752771242357,
+      "tag": "0010_daffy_norrin_radd",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1752775253261,
+      "tag": "0011_majestic_sphinx",
+      "breakpoints": true
     }
   ]
 }

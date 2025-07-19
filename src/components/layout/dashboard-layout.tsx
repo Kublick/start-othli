@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
+import { TrialNotificationBanner } from "@/components/subscription/trial-notification-banner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useSession } from "@/hooks/use-session";
+import { useSubscriptionTrial } from "@/hooks/use-subscription-trial";
 import { useAuthStore } from "@/store/store";
 import TopNavBar from "./top-navbar";
 
@@ -66,6 +68,7 @@ export default function DashboardLayout({
   title = "Dashboard",
 }: DashboardLayoutProps) {
   const { user, logout } = useAuthStore();
+  const { isOnTrial, trialEndDate, daysRemaining } = useSubscriptionTrial();
 
   // Get current year and month for navigation links
   const now = new Date();
@@ -241,6 +244,12 @@ export default function DashboardLayout({
           </header>
           <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <div className="mx-auto w-full max-w-full px-2 sm:max-w-screen-md sm:px-4 md:max-w-screen-lg xl:max-w-screen-xl 2xl:max-w-screen-2xl">
+              {isOnTrial && (
+                <TrialNotificationBanner
+                  trialEndDate={trialEndDate}
+                  daysRemaining={daysRemaining}
+                />
+              )}
               {children}
             </div>
           </div>

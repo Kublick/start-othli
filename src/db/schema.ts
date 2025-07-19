@@ -55,6 +55,7 @@ export const user = pgTable("user", {
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
   isActive: boolean("is_active").default(true),
+  stripeCustomerId: text("stripe_customer_id"),
 });
 
 export const session = pgTable("session", {
@@ -95,6 +96,21 @@ export const verification = pgTable("verification", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at"),
   updatedAt: timestamp("updated_at"),
+});
+
+export const subscription = pgTable("subscription", {
+  id: text("id").primaryKey(),
+  plan: text("plan").notNull(),
+  referenceId: text("reference_id").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  status: text("status").default("incomplete"),
+  periodStart: timestamp("period_start"),
+  periodEnd: timestamp("period_end"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end"),
+  seats: integer("seats"),
+  trialStart: timestamp("trial_start"),
+  trialEnd: timestamp("trial_end"),
 });
 
 export const userAccount = pgTable("user_account", {

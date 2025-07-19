@@ -199,7 +199,7 @@ function RouteComponent() {
     excludeTransactions: false,
   });
 
-  // React Query hooks
+
   const { data: activeAccounts = [], isLoading: isLoadingActive } =
     useActiveAccounts();
   const { data: closedAccounts = [] } = useClosedAccounts();

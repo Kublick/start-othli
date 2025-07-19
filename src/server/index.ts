@@ -7,6 +7,7 @@ import financialAccountRouter from "./routes/financialAccountRouter";
 import payeesRouter from "./routes/payeesRouter";
 import { seedRouter } from "./routes/seed";
 import { setupRouter } from "./routes/setupRouter";
+import { subscriptionRouter } from "./routes/subscriptionRouter";
 import { summaryRouter } from "./routes/summaryRouter";
 import transactionsRouter from "./routes/transactionsRouter";
 
@@ -38,7 +39,8 @@ const routes = app
   .route("/setup", setupRouter)
   .route("/transactions", transactionsRouter)
   .route("/payees", payeesRouter)
-  .route("/summary", summaryRouter);
+  .route("/summary", summaryRouter)
+  .route("/subscription", subscriptionRouter);
 
 export type AppType = typeof routes;
 

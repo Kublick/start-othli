@@ -52,7 +52,7 @@ type RowData = {
 };
 
 // Custom meta type for sticky columns
-type StickyMeta = { sticky?: "left" | "right"; width?: number };
+type StickyMeta = { sticky?: "left" | "right" };
 
 // Reusable component for currency cells
 const CurrencyCell: React.FC<{ value: unknown }> = ({ value }) => {
@@ -322,11 +322,10 @@ export default function AnalisisTable({
     const createDateColumns = (): ColumnDef<RowData>[] => {
       return datePeriods.map((period) => ({
         accessorKey: period.key,
-        header: period.label, // No calendar icon, just the label
+        header: period.label,
         cell: (info) => <CurrencyCell value={info.getValue()} />,
         enableSorting: true,
         sortingFn: numericSort,
-        meta: { width: 90 }, // Custom meta for width
       }));
     };
 
@@ -350,7 +349,7 @@ export default function AnalisisTable({
       },
       {
         accessorKey: "count",
-        header: () => <span>Transacciones</span>,
+        header: () => <span>#</span>,
         cell: (info) => renderCountCell(info.getValue()),
         enableSorting: false,
         meta: { sticky: "right" },
@@ -392,24 +391,25 @@ export default function AnalisisTable({
   return (
     <div>
       {dateSelector}
-      <div className="relative mx-auto max-w-screen-2xl overflow-hidden rounded-lg border text-sm">
-        <div className="max-w-full overflow-x-auto">
-          <table className="w-full border-collapse bg-white text-sm">
+      <div className="relative overflow-hidden">
+        <div
+          className="overflow-x-auto"
+          style={{
+            paddingRight: `${SUMMARY_COL_WIDTH * 3}px`,
+            marginRight: `-${SUMMARY_COL_WIDTH * 3}px`,
+          }}
+        >
+          <table className="w-full border-collapse bg-white">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header, colIdx) => {
+                  {headerGroup.headers.map((header) => {
                     const sticky = (header.column.columnDef.meta as StickyMeta)
                       ?.sticky;
-                    // Set width for date columns
-                    let style: React.CSSProperties = {};
-                    if (
-                      (header.column.columnDef.meta as StickyMeta)?.width === 90
-                    ) {
-                      style = { minWidth: 90, maxWidth: 90 };
-                    } else {
-                      style = { minWidth: 120, maxWidth: 180 };
-                    }
+                    let style: React.CSSProperties = {
+                      minWidth: 120,
+                      maxWidth: 180,
+                    };
                     if (sticky === "right") {
                       // Calculate position for right-sticky columns (reverse order)
                       const rightStickyHeaders = headerGroup.headers.filter(
@@ -448,15 +448,14 @@ export default function AnalisisTable({
                       header.column.id === "average" ||
                       header.column.id === "count";
 
-                    const isFirstCol = colIdx === 0;
                     return (
                       <th
                         key={header.id}
                         onClick={header.column.getToggleSortingHandler()}
-                        className={`cursor-pointer select-none border px-2 py-1${isSummary ? " border-l" : ""} overflow-hidden truncate whitespace-nowrap ${isFirstCol ? "bg-gray-100" : ""} bg-gray-50`}
+                        className={`cursor-pointer select-none border px-2 py-1 text-left text-sm font-medium${isSummary ? " border-l-2 border-l-gray-300" : ""}`}
                         style={style}
                       >
-                        <span className="inline-flex items-center gap-1">
+                        <div className="flex items-center gap-1">
                           {flexRender(
                             header.column.columnDef.header,
                             header.getContext(),
@@ -467,7 +466,7 @@ export default function AnalisisTable({
                           {header.column.getIsSorted() === "desc" && (
                             <ChevronDown className="h-3 w-3" />
                           )}
-                        </span>
+                        </div>
                       </th>
                     );
                   })}
@@ -477,18 +476,13 @@ export default function AnalisisTable({
             <tbody>
               {table.getRowModel().rows.map((row) => (
                 <tr key={row.id}>
-                  {row.getVisibleCells().map((cell, colIdx) => {
+                  {row.getVisibleCells().map((cell) => {
                     const sticky = (cell.column.columnDef.meta as StickyMeta)
                       ?.sticky;
-                    // Set width for date columns
-                    let style: React.CSSProperties = {};
-                    if (
-                      (cell.column.columnDef.meta as StickyMeta)?.width === 90
-                    ) {
-                      style = { minWidth: 90, maxWidth: 90 };
-                    } else {
-                      style = { minWidth: 120, maxWidth: 180 };
-                    }
+                    let style: React.CSSProperties = {
+                      minWidth: 120,
+                      maxWidth: 180,
+                    };
                     if (sticky === "right") {
                       // Calculate position for right-sticky columns (reverse order)
                       const rightStickyCells = row
@@ -529,17 +523,10 @@ export default function AnalisisTable({
                       cell.column.id === "average" ||
                       cell.column.id === "count";
 
-                    const isFirstCol = colIdx === 0;
-                    // Align numeric columns to the left
-                    const isNumeric =
-                      cell.column.id === "count" ||
-                      cell.column.id === "total" ||
-                      cell.column.id === "average" ||
-                      datePeriods.some((p) => p.key === cell.column.id);
                     return (
                       <td
                         key={cell.id}
-                        className={`border px-2 py-1${isSummary ? " border-l" : ""} overflow-hidden truncate whitespace-nowrap ${isFirstCol ? "bg-gray-100" : ""} ${isNumeric ? "text-right" : ""}`}
+                        className={`border px-2 py-1 text-sm truncate${isSummary ? " border-l-2 border-l-gray-300" : ""}`}
                         style={style}
                       >
                         {flexRender(

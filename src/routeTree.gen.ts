@@ -12,6 +12,7 @@ import { createServerRootRoute } from '@tanstack/react-start/server'
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SubscripcionPagoRouteImport } from './routes/subscripcion/pago'
 import { Route as DashboardOverviewRouteImport } from './routes/dashboard/overview'
 import { Route as DashboardAnalisisRouteImport } from './routes/dashboard/analisis'
 import { Route as ConfigCuentasRouteImport } from './routes/config/cuentas'
@@ -31,6 +32,11 @@ const rootServerRouteImport = createServerRootRoute()
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubscripcionPagoRoute = SubscripcionPagoRouteImport.update({
+  id: '/subscripcion/pago',
+  path: '/subscripcion/pago',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardOverviewRoute = DashboardOverviewRouteImport.update({
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/config/cuentas': typeof ConfigCuentasRoute
   '/dashboard/analisis': typeof DashboardAnalisisRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
+  '/subscripcion/pago': typeof SubscripcionPagoRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/config/cuentas': typeof ConfigCuentasRoute
   '/dashboard/analisis': typeof DashboardAnalisisRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
+  '/subscripcion/pago': typeof SubscripcionPagoRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/config/cuentas': typeof ConfigCuentasRoute
   '/dashboard/analisis': typeof DashboardAnalisisRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
+  '/subscripcion/pago': typeof SubscripcionPagoRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/config/cuentas'
     | '/dashboard/analisis'
     | '/dashboard/overview'
+    | '/subscripcion/pago'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/config/cuentas'
     | '/dashboard/analisis'
     | '/dashboard/overview'
+    | '/subscripcion/pago'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
     | '/config/cuentas'
     | '/dashboard/analisis'
     | '/dashboard/overview'
+    | '/subscripcion/pago'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   ConfigCuentasRoute: typeof ConfigCuentasRoute
   DashboardAnalisisRoute: typeof DashboardAnalisisRoute
   DashboardOverviewRoute: typeof DashboardOverviewRoute
+  SubscripcionPagoRoute: typeof SubscripcionPagoRoute
   DashboardFinanzasImportarRoute: typeof DashboardFinanzasImportarRoute
   DashboardFinanzasPresupuestosRoute: typeof DashboardFinanzasPresupuestosRoute
   DashboardFinanzasTransaccionesRoute: typeof DashboardFinanzasTransaccionesRoute
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subscripcion/pago': {
+      id: '/subscripcion/pago'
+      path: '/subscripcion/pago'
+      fullPath: '/subscripcion/pago'
+      preLoaderRoute: typeof SubscripcionPagoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/overview': {
@@ -351,6 +371,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfigCuentasRoute: ConfigCuentasRoute,
   DashboardAnalisisRoute: DashboardAnalisisRoute,
   DashboardOverviewRoute: DashboardOverviewRoute,
+  SubscripcionPagoRoute: SubscripcionPagoRoute,
   DashboardFinanzasImportarRoute: DashboardFinanzasImportarRoute,
   DashboardFinanzasPresupuestosRoute: DashboardFinanzasPresupuestosRoute,
   DashboardFinanzasTransaccionesRoute: DashboardFinanzasTransaccionesRoute,
