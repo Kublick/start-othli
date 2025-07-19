@@ -7,13 +7,14 @@ import dotenv from "dotenv";
 import { Resend } from "resend";
 import { toast } from "sonner";
 import Stripe from "stripe";
+import { clientEnv, env } from "@/env";
 import { db } from "../db";
 import * as schema from "../db/schema";
-// import { process.env, env } from "../env";
 import EmailConfirmation from "./email/ConfirmEmail";
 import PasswordReset from "./email/PasswordReset";
 
 dotenv.config();
+
 
 const resend = new Resend(
   process.env.RESEND_API_KEY,
@@ -65,7 +66,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, token }) => {
-      const confirmationUrl = `${process.env.VITE_BETTER_AUTH_URL}/auth/reset?token=${token}`;
+      const confirmationUrl = `${clientEnv.VITE_BETTER_AUTH_URL}/auth/reset?token=${token}`;
       const { error } = await resend.emails.send({
         from: "info@aumentapacientes.com",
         to: user.email,
@@ -91,7 +92,7 @@ export const auth = betterAuth({
       token: string;
     }) => {
       console.log("sendVerificationEmail", user, token);
-      const confirmationUrl = `${process.env.VITE_BETTER_AUTH_URL}/auth/verify?token=${token}`;
+      const confirmationUrl = `${clientEnv.VITE_BETTER_AUTH_URL}/auth/verify?token=${token}`;
       const { error } = await resend.emails.send({
         from: "info@aumentapacientes.com",
         to: user.email,
@@ -114,17 +115,17 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
   },
-  trustedOrigins: [process.env.VITE_BETTER_AUTH_URL ?? "http://localhost:3000"],
+  trustedOrigins: [clientEnv.VITE_BETTER_AUTH_URL],
   plugins: [
     openAPI(),
     reactStartCookies(),
     stripe({
       stripeClient,
-      stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+      stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
       createCustomerOnSignUp: true,
       subscription: {
         enabled: true,

@@ -291,10 +291,7 @@ const transactionsRouter = new Hono<{ Variables: Context }>()
     "/bulk-import",
     zValidator("json", BulkImportSchema, (result, c) => {
       if (!result.success) {
-        return c.json(
-          { error: "Datos inválidos", details: result.error },
-          400,
-        );
+        return c.json({ error: "Datos inválidos", details: result.error }, 400);
       }
     }),
     async (c) => {

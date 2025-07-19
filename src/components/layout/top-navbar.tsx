@@ -17,6 +17,14 @@ import {
 import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuthStore } from "@/store/store";
 
 // Helper for submenu popover
@@ -173,33 +181,56 @@ export default function TopNavBar() {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <Avatar className="h-8 w-8">
-          <AvatarImage
-            src={user?.image || "/avatar_image.png"}
-            alt={user?.name || "User"}
-          />
-          <AvatarFallback>
-            {user?.name?.[0] || user?.email?.[0] || "U"}
-          </AvatarFallback>
-        </Avatar>
-        <div className="hidden min-w-0 flex-1 sm:block">
-          <p className="truncate font-medium text-sm">
-            {user?.name || "Usuario"}
-          </p>
-          <p className="truncate text-muted-foreground text-xs">
-            {user?.email || "usuario@example.com"}
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="justify-start"
-          onClick={logout}
-        >
-          <span className="sr-only">Cerrar Sesión</span>
-          <LogOut className="h-4 w-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="relative h-auto p-0 hover:bg-transparent"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage
+                    src={user?.image || "/avatar_image.png"}
+                    alt={user?.name || "User"}
+                  />
+                  <AvatarFallback>
+                    {user?.name?.[0] || user?.email?.[0] || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="hidden min-w-0 flex-1 sm:block text-left">
+                  <p className="truncate font-medium text-sm">
+                    {user?.name || "Usuario"}
+                  </p>
+                  <p className="truncate text-muted-foreground text-xs">
+                    {user?.email || "usuario@example.com"}
+                  </p>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/profile" className="flex items-center">
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/config/cuentas" className="flex items-center">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configuración</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={logout} className="text-red-600">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Cerrar Sesión</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </nav>
   );

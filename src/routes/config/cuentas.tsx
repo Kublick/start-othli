@@ -199,7 +199,6 @@ function RouteComponent() {
     excludeTransactions: false,
   });
 
-
   const { data: activeAccounts = [], isLoading: isLoadingActive } =
     useActiveAccounts();
   const { data: closedAccounts = [] } = useClosedAccounts();

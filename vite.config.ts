@@ -2,7 +2,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { defineConfig, loadEnv } from "vite";
 import viteTsConfigPaths from "vite-tsconfig-paths";
-import viteReact from '@vitejs/plugin-react';
+import viteReact from "@vitejs/plugin-react";
 
 const config = defineConfig(async ({ mode }) => {
   // Load environment variables from .env files
@@ -18,7 +18,7 @@ const config = defineConfig(async ({ mode }) => {
       }),
       tailwindcss(),
       tanstackStart({
-        customViteReactPlugin: true
+        customViteReactPlugin: true,
       }),
       viteReact(),
     ],
