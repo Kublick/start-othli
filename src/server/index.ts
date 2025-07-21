@@ -23,7 +23,7 @@ app.use("*", async (c, next) => {
   }
 
   c.set("user", session.user);
-  c.set("session", session.session);
+  c.set("session", session);
   return next();
 });
 

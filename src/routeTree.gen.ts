@@ -13,6 +13,7 @@ import { createServerRootRoute } from '@tanstack/react-start/server'
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as SubscripcionPagoRouteImport } from './routes/subscripcion/pago'
 import { Route as DashboardOverviewRouteImport } from './routes/dashboard/overview'
 import { Route as DashboardAnalisisRouteImport } from './routes/dashboard/analisis'
@@ -38,6 +39,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubscripcionPagoRoute = SubscripcionPagoRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/analisis': typeof DashboardAnalisisRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
   '/subscripcion/pago': typeof SubscripcionPagoRoute
+  '/admin': typeof AdminIndexRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/dashboard/analisis': typeof DashboardAnalisisRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
   '/subscripcion/pago': typeof SubscripcionPagoRoute
+  '/admin': typeof AdminIndexRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/dashboard/analisis': typeof DashboardAnalisisRoute
   '/dashboard/overview': typeof DashboardOverviewRoute
   '/subscripcion/pago': typeof SubscripcionPagoRoute
+  '/admin/': typeof AdminIndexRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/dashboard/analisis'
     | '/dashboard/overview'
     | '/subscripcion/pago'
+    | '/admin'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/dashboard/analisis'
     | '/dashboard/overview'
     | '/subscripcion/pago'
+    | '/admin'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/dashboard/analisis'
     | '/dashboard/overview'
     | '/subscripcion/pago'
+    | '/admin/'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
     | '/dashboard/finanzas/transacciones'
@@ -233,6 +245,7 @@ export interface RootRouteChildren {
   DashboardAnalisisRoute: typeof DashboardAnalisisRoute
   DashboardOverviewRoute: typeof DashboardOverviewRoute
   SubscripcionPagoRoute: typeof SubscripcionPagoRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   DashboardFinanzasImportarRoute: typeof DashboardFinanzasImportarRoute
   DashboardFinanzasPresupuestosRoute: typeof DashboardFinanzasPresupuestosRoute
   DashboardFinanzasTransaccionesRoute: typeof DashboardFinanzasTransaccionesRoute
@@ -273,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/subscripcion/pago': {
@@ -393,6 +413,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardAnalisisRoute: DashboardAnalisisRoute,
   DashboardOverviewRoute: DashboardOverviewRoute,
   SubscripcionPagoRoute: SubscripcionPagoRoute,
+  AdminIndexRoute: AdminIndexRoute,
   DashboardFinanzasImportarRoute: DashboardFinanzasImportarRoute,
   DashboardFinanzasPresupuestosRoute: DashboardFinanzasPresupuestosRoute,
   DashboardFinanzasTransaccionesRoute: DashboardFinanzasTransaccionesRoute,

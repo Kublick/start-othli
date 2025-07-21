@@ -285,7 +285,7 @@ export function SetupWizard({ onComplete = () => {} }: SetupWizardProps) {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="checking">
-                          Cuenta Corriente
+                          Cuenta de Nomina
                         </SelectItem>
                         <SelectItem value="savings">
                           Cuenta de Ahorros
@@ -304,8 +304,7 @@ export function SetupWizard({ onComplete = () => {} }: SetupWizardProps) {
                     </Label>
                     <Input
                       id={`balance-${account.id}`}
-                      type="number"
-                      step="0.01"
+                      type="text"
                       value={account.balance}
                       onChange={(e) =>
                         handleUpdateAccount(

@@ -115,11 +115,11 @@ function TransactionSummaryPanel({
 
   // Totals
   const expensesTotal = expenseCategories.reduce(
-    (sum, cat) => sum + (categoryTotals[cat.id] || 0),
+    (sum, cat) => sum + Math.abs(categoryTotals[cat.id] || 0),
     0,
   );
   const incomeTotal = incomeCategories.reduce(
-    (sum, cat) => sum + (categoryTotals[cat.id] || 0),
+    (sum, cat) => sum + Math.abs(categoryTotals[cat.id] || 0),
     0,
   );
   const netIncome = incomeTotal - expensesTotal;
@@ -200,6 +200,12 @@ function TransactionSummaryPanel({
         </>
       )}
       <div className="my-2 border-t border-dashed" />
+      <div className="flex justify-between font-semibold text-sm">
+        <span>Total Ingresos</span>
+        <span className="font-mono text-green-600">
+          {formatCurrency(incomeTotal)}
+        </span>
+      </div>
       <div className="flex justify-between font-semibold text-sm">
         <span>Total Gastos</span>
         <span className="font-mono text-red-600">
