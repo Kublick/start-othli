@@ -1,7 +1,7 @@
-import type { Session, User } from "better-auth";
 import type { Env } from "hono";
+import type { auth } from "./auth";
 
 export type Context = Env & {
-  user: User | null;
-  session: Session | null;
+  user: typeof auth.$Infer.Session.user | null;
+  session: typeof auth.$Infer.Session | null;
 };

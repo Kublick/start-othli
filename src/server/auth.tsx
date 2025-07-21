@@ -1,7 +1,7 @@
 import { stripe } from "@better-auth/stripe";
 import { betterAuth, type User } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { openAPI } from "better-auth/plugins";
+import { admin, openAPI } from "better-auth/plugins";
 import { reactStartCookies } from "better-auth/react-start";
 import dotenv from "dotenv";
 import { Resend } from "resend";
@@ -34,7 +34,14 @@ export const auth = betterAuth({
       ...schema,
     },
   }),
-  // Database hooks to run custom logic after database operations
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        input: false,
+      },
+    },
+  },
   databaseHooks: {
     user: {
       create: {
@@ -122,6 +129,7 @@ export const auth = betterAuth({
   trustedOrigins: [clientEnv.VITE_BETTER_AUTH_URL],
   plugins: [
     openAPI(),
+    admin(),
     reactStartCookies(),
     stripe({
       stripeClient,

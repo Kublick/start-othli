@@ -16,6 +16,7 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(
           id: session?.user?.id,
           name: session?.user?.name,
           image: session?.user?.image,
+          role: session?.user.role,
         },
         session: session,
       },

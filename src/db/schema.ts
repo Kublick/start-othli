@@ -14,7 +14,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
-export const userRoleEnum = pgEnum("user_role", ["user", "assistant", "admin"]);
 export const accountTypeEnum = pgEnum("account_type", [
   "efectivo",
   "debito",
@@ -50,12 +49,15 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull(),
   image: text("image"),
-  role: userRoleEnum("role").notNull().default("user"),
+  role: text("role"),
   setupCompleted: boolean("setup_completed").default(false).notNull(),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
   isActive: boolean("is_active").default(true),
   stripeCustomerId: text("stripe_customer_id"),
+  banned: boolean("banned"),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires"),
 });
 
 export const session = pgTable("session", {
@@ -69,6 +71,7 @@ export const session = pgTable("session", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  impersonatedBy: text("impersonated_by"),
 });
 
 export const account = pgTable("account", {
