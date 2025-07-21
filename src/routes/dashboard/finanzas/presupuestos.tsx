@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { BudgetCategoryTable } from "@/components/budget-expenses-table";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { useBudgets, useUpdateBudget } from "@/features/dashboard/api/budgets";
+import { useComparativeBudgets, useUpdateBudget } from "@/features/dashboard/api/budgets";
 import { useActiveCategories } from "@/features/dashboard/api/categories";
 import { useTransactions } from "@/features/dashboard/api/transactions";
 
@@ -40,9 +40,13 @@ function RouteComponent() {
   };
 
   const currentDate = getCurrentMonth();
+  
+  // Calculate previous month date
+  const previousDate = new Date(currentDate);
+  previousDate.setMonth(previousDate.getMonth() - 1);
 
   // Memoize the date calculations to ensure they only change when needed
-  const { filters } = useMemo(() => {
+  const { filters, previousFilters } = useMemo(() => {
     const start = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
@@ -54,19 +58,40 @@ function RouteComponent() {
       0,
     );
 
+    const previousStart = new Date(
+      previousDate.getFullYear(),
+      previousDate.getMonth(),
+      1,
+    );
+    const previousEnd = new Date(
+      previousDate.getFullYear(),
+      previousDate.getMonth() + 1,
+      0,
+    );
+
     const transactionFilters = {
       startDate: start.toISOString().split("T")[0],
       endDate: end.toISOString().split("T")[0],
     };
 
+    const previousTransactionFilters = {
+      startDate: previousStart.toISOString().split("T")[0],
+      endDate: previousEnd.toISOString().split("T")[0],
+    };
+
     return {
       filters: transactionFilters,
+      previousFilters: previousTransactionFilters,
     };
-  }, [currentDate]);
+  }, [currentDate, previousDate]);
 
   // Filter transactions for current month
   const { data } = useTransactions(filters);
   const transactions = data?.transactions || [];
+  
+  // Filter transactions for previous month
+  const { data: previousData } = useTransactions(previousFilters);
+  const previousMonthTransactions = previousData?.transactions || [];
 
   // Debug logging
   console.log("Current date:", currentDate);
@@ -75,15 +100,22 @@ function RouteComponent() {
 
   const { data: categories = [] } = useActiveCategories();
 
-  // Fetch budgets from backend for the selected month
+  // Fetch comparative budgets from backend for the selected month
   const budgetFilters = {
     year: String(currentDate.getFullYear()),
     month: String(currentDate.getMonth() + 1).padStart(2, "0"),
   };
 
-  const { data: budgetData, isLoading: budgetsLoading } =
-    useBudgets(budgetFilters);
-  const backendBudgets = budgetData?.budgets || {};
+  // Calculate previous month filters
+  const previousBudgetFilters = {
+    year: String(previousDate.getFullYear()),
+    month: String(previousDate.getMonth() + 1).padStart(2, "0"),
+  };
+
+  const { data: comparativeBudgetData, isLoading: budgetsLoading } =
+    useComparativeBudgets(budgetFilters, previousBudgetFilters);
+  const backendBudgets = comparativeBudgetData?.currentMonth || {};
+  const previousMonthBudgets = comparativeBudgetData?.previousMonth || {};
 
   // Budget mutation
   const updateBudgetMutation = useUpdateBudget();
@@ -221,6 +253,8 @@ function RouteComponent() {
           categories={categories}
           transactions={transactions}
           budgets={budgets}
+          previousMonthBudgets={previousMonthBudgets}
+          previousMonthTransactions={previousMonthTransactions}
           onBudgetChange={handleBudgetChange}
         />
         <BudgetCategoryTable
@@ -229,6 +263,8 @@ function RouteComponent() {
           categories={categories}
           transactions={transactions}
           budgets={budgets}
+          previousMonthBudgets={previousMonthBudgets}
+          previousMonthTransactions={previousMonthTransactions}
           onBudgetChange={handleBudgetChange}
         />
 

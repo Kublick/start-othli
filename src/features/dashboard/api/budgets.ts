@@ -6,6 +6,11 @@ export interface BudgetData {
   budgets: Record<number, number>; // categoryId -> plannedAmount
 }
 
+export interface ComparativeBudgetData {
+  currentMonth: Record<number, number>;
+  previousMonth: Record<number, number>;
+}
+
 export interface UpdateBudgetData {
   categoryId: number;
   amount: number;
@@ -48,6 +53,22 @@ const fetchBudgets = async (
   return data;
 };
 
+// Fetch comparative budgets (current and previous month)
+const fetchComparativeBudgets = async (
+  currentFilters: BudgetFilters,
+  previousFilters: BudgetFilters,
+): Promise<ComparativeBudgetData> => {
+  const [currentData, previousData] = await Promise.all([
+    fetchBudgets(currentFilters),
+    fetchBudgets(previousFilters),
+  ]);
+
+  return {
+    currentMonth: currentData.budgets,
+    previousMonth: previousData.budgets,
+  };
+};
+
 // Create/Update budget
 const updateBudget = async (data: UpdateBudgetData): Promise<void> => {
   const params = new URLSearchParams();
@@ -82,6 +103,18 @@ export const useBudgets = (filters: BudgetFilters = {}) => {
   return useQuery({
     queryKey: budgetKeys.list(filters),
     queryFn: () => fetchBudgets(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+export const useComparativeBudgets = (
+  currentFilters: BudgetFilters,
+  previousFilters: BudgetFilters,
+) => {
+  return useQuery({
+    queryKey: [...budgetKeys.lists(), 'comparative', { currentFilters, previousFilters }],
+    queryFn: () => fetchComparativeBudgets(currentFilters, previousFilters),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

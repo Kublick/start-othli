@@ -40,6 +40,10 @@ interface BudgetRow {
   budgeted: number;
   activity: number;
   available: number;
+  previousMonthBudgeted: number;
+  previousMonthActivity: number;
+  previousMonthAvailable: number;
+  budgetDifference: number;
 }
 
 interface BudgetCategoryTableProps {
@@ -47,6 +51,8 @@ interface BudgetCategoryTableProps {
   categories: Category[];
   transactions: Transaction[];
   budgets: Record<number, number>; // categoryId -> budgeted amount
+  previousMonthBudgets?: Record<number, number>; // categoryId -> previous month budgeted amount
+  previousMonthTransactions?: Transaction[];
   onBudgetChange: (categoryId: number, value: number) => void | Promise<void>;
 }
 
@@ -114,9 +120,9 @@ function ExpectedCell({
   );
 }
 
-const TABLE_WIDTH = 1000;
-const CATEGORY_WIDTH = Math.floor(TABLE_WIDTH * 0.55);
-const OTHER_COLUMNS_WIDTH = Math.floor((TABLE_WIDTH - CATEGORY_WIDTH) / 3);
+const TABLE_WIDTH = 1400;
+const CATEGORY_WIDTH = 300;
+const OTHER_COLUMNS_WIDTH = (TABLE_WIDTH - CATEGORY_WIDTH) / 7;
 
 export const budgetTableColumns: (
   onBudgetChange: BudgetCategoryTableProps["onBudgetChange"],
@@ -144,7 +150,7 @@ export const budgetTableColumns: (
     accessorKey: "budgeted",
     header: () => (
       <div className="flex items-center gap-2 font-semibold uppercase tracking-wider hover:text-black">
-        Presupuestado
+        Presupuesto
       </div>
     ),
     cell: (info) => (
@@ -188,7 +194,7 @@ export const budgetTableColumns: (
     accessorKey: "available",
     header: () => (
       <div className="flex items-center justify-end gap-2 text-right font-semibold uppercase tracking-wider hover:text-black">
-        Disponible
+        Diferencia
       </div>
     ),
     cell: (info) => {
@@ -205,6 +211,73 @@ export const budgetTableColumns: (
     },
     size: OTHER_COLUMNS_WIDTH,
   },
+  {
+    accessorKey: "previousMonthBudgeted",
+    header: () => (
+      <div className="text-right font-semibold uppercase tracking-wider">
+        Presupuesto
+        <br />
+        Mes Anterior
+      </div>
+    ),
+    cell: (info) => {
+      const value = info.getValue<number>();
+      return (
+        <div className="w-full text-right text-muted-foreground">
+          {formatCurrency(value)}
+        </div>
+      );
+    },
+    size: OTHER_COLUMNS_WIDTH,
+  },
+  {
+    accessorKey: "previousMonthActivity",
+    header: () => (
+      <div className="text-right font-semibold uppercase tracking-wider">
+        Total
+        <br />
+        Mes Anterior
+      </div>
+    ),
+    cell: (info) => {
+      const value = info.getValue<number>();
+      return (
+        <div className="w-full text-right text-muted-foreground">
+          {formatCurrency(value)}
+        </div>
+      );
+    },
+    size: OTHER_COLUMNS_WIDTH,
+  },
+  {
+    accessorKey: "previousMonthAvailable",
+    header: () => (
+      <div className="text-right font-semibold uppercase tracking-wider">
+        Diferencia
+      </div>
+    ),
+    cell: (info) => {
+      const value = info.getValue<number>();
+      let textColor = "";
+      let prefix = "";
+      if (value > 0) {
+        textColor = "text-green-600 font-semibold";
+        prefix = "+";
+      } else if (value < 0) {
+        textColor = "text-red-600 font-semibold";
+      }
+      return (
+        <div className="w-full text-right">
+          <span className={textColor}>
+            {value !== 0
+              ? `${prefix}${formatCurrency(Math.abs(value))}`
+              : formatCurrency(0)}
+          </span>
+        </div>
+      );
+    },
+    size: OTHER_COLUMNS_WIDTH,
+  },
 ];
 
 export function BudgetCategoryTable({
@@ -212,6 +285,8 @@ export function BudgetCategoryTable({
   categories,
   transactions,
   budgets,
+  previousMonthBudgets = {},
+  previousMonthTransactions = [],
   onBudgetChange,
 }: BudgetCategoryTableProps) {
   // Filter categories by type
@@ -257,17 +332,47 @@ export function BudgetCategoryTable({
           }, 0);
         }
         const budgeted = Number(budgets[cat.id] || 0);
+        const previousMonthBudgeted = Number(previousMonthBudgets[cat.id] || 0);
+        const budgetDifference = budgeted - previousMonthBudgeted;
+
+        // Calculate previous month activity
+        const previousMonthActivity = previousMonthTransactions
+          .filter((t) => t.categoryId === cat.id)
+          .reduce((sum, t) => {
+            const amt = Number.parseFloat(t.amount); // Convert to number first
+            if (type === "income") {
+              return sum + (amt > 0 ? amt : 0);
+            }
+            return sum + (amt < 0 ? Math.abs(amt) : 0); // Removed else clause
+          }, 0);
+
         const available =
           type === "income" ? activity - budgeted : budgeted - activity;
+        const previousMonthAvailable =
+          type === "income"
+            ? previousMonthActivity - previousMonthBudgeted
+            : previousMonthBudgeted - previousMonthActivity;
+
         return {
           id: cat.id,
           name: cat.name,
           budgeted,
           activity,
           available,
+          previousMonthBudgeted,
+          previousMonthActivity,
+          previousMonthAvailable,
+          budgetDifference,
         };
       }),
-    [filteredCategories, transactionsByCategory, budgets, type],
+    [
+      filteredCategories,
+      transactionsByCategory,
+      budgets,
+      type,
+      previousMonthTransactions,
+      previousMonthBudgets,
+    ], // Added missing dependencies
   );
 
   const [tableData, setTableData] = useState<BudgetRow[]>([]);
@@ -298,6 +403,19 @@ export function BudgetCategoryTable({
   const totalBudgeted = data.reduce((acc, row) => acc + row.budgeted, 0);
   const totalActivity = data.reduce((acc, row) => acc + row.activity, 0);
   const totalAvailable = data.reduce((acc, row) => acc + row.available, 0);
+
+  const totalPreviousMonthBudgeted = data.reduce(
+    (acc, row) => acc + row.previousMonthBudgeted,
+    0,
+  );
+  const totalPreviousMonthActivity = data.reduce(
+    (acc, row) => acc + row.previousMonthActivity,
+    0,
+  );
+  const totalPreviousMonthAvailable = data.reduce(
+    (acc, row) => acc + row.previousMonthAvailable,
+    0,
+  );
 
   return (
     <>
@@ -365,6 +483,15 @@ export function BudgetCategoryTable({
                 </TableCell>
                 <TableCell className="text-right">
                   {formatCurrency(totalAvailable)}
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatCurrency(totalPreviousMonthBudgeted)}
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatCurrency(totalPreviousMonthActivity)}
+                </TableCell>
+                <TableCell className="text-right">
+                  {formatCurrency(totalPreviousMonthAvailable)}
                 </TableCell>
               </TableRow>
             </TableFooter>
