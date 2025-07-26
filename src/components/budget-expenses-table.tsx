@@ -128,17 +128,21 @@ export const budgetTableColumns: (
   onBudgetChange: BudgetCategoryTableProps["onBudgetChange"],
   transactionsByCategory: Map<number, Transaction[]>,
   categories: Category[],
+  type: "income" | "expense",
+  previousMonthTransactionsByCategory: Map<number, Transaction[]>,
 ) => ColumnDef<BudgetRow>[] = (
   onBudgetChange,
   transactionsByCategory,
   categories,
+  type,
+  previousMonthTransactionsByCategory,
 ) => [
   {
     id: "categoryName",
     accessorKey: "name",
     header: () => (
       <div className="pl-4 text-left font-semibold uppercase tracking-wider">
-        Gastos
+        {type === "income" ? "Ingresos" : "Gastos"}
       </div>
     ),
     cell: (info) => (
@@ -241,9 +245,23 @@ export const budgetTableColumns: (
     ),
     cell: (info) => {
       const value = info.getValue<number>();
+      const categoryId = info.row.original.id;
+      const categoryTransactions = previousMonthTransactionsByCategory.get(categoryId) || [];
+      const category = categories.find((c) => c.id === categoryId);
       return (
-        <div className="w-full text-right text-muted-foreground">
-          {formatCurrency(value)}
+        <div className="relative flex items-center">
+          {categoryTransactions.length > 0 && (
+            <div className="absolute left-0">
+              <TransactionsDialog
+                id={`prev-${categoryId.toString()}`}
+                transactions={categoryTransactions}
+                category={category || null}
+              />
+            </div>
+          )}
+          <div className="w-full text-right text-muted-foreground">
+            {formatCurrency(value)}
+          </div>
         </div>
       );
     },
@@ -313,6 +331,22 @@ export function BudgetCategoryTable({
     });
     return map;
   }, [transactions]);
+
+  // Memoize previous month transactions by category
+  const previousMonthTransactionsByCategory = React.useMemo(() => {
+    const map = new Map<number, Transaction[]>();
+    previousMonthTransactions.forEach((transaction) => {
+      const categoryId = transaction.categoryId ?? 0;
+      if (!map.has(categoryId)) {
+        map.set(categoryId, []);
+      }
+      const categoryTransactions = map.get(categoryId);
+      if (categoryTransactions) {
+        categoryTransactions.push(transaction);
+      }
+    });
+    return map;
+  }, [previousMonthTransactions]);
 
   // Build table data
   const data: BudgetRow[] = React.useMemo(
@@ -388,6 +422,8 @@ export function BudgetCategoryTable({
       onBudgetChange,
       transactionsByCategory,
       categories,
+      type,
+      previousMonthTransactionsByCategory,
     ),
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => `${row.id}`,

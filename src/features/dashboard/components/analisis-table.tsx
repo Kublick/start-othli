@@ -86,11 +86,11 @@ function getDayKey(date: Date): string {
 }
 
 function getMonthLabel(date: Date): string {
-  return date.toLocaleString("default", { month: "short", year: "numeric" });
+  return date.toLocaleString("es-MX", { month: "short", year: "numeric" });
 }
 
 function getDayLabel(date: Date): string {
-  return date.toLocaleString("default", { day: "numeric", month: "short" });
+  return date.toLocaleString("es-MX", { day: "numeric", month: "short" });
 }
 
 // Currency formatter for MXN
@@ -213,19 +213,66 @@ export default function AnalisisTable({
 
   // Generate date periods based on viewMode
   const datePeriods: DateInfo[] = React.useMemo(() => {
-    if (filteredTransactions.length === 0) return [];
-
-    // Find min and max date
-    let minDate = new Date(filteredTransactions[0].date);
-    let maxDate = new Date(filteredTransactions[0].date);
-
-    filteredTransactions.forEach((tx) => {
-      const d = new Date(tx.date);
-      if (d < minDate) minDate = d;
-      if (d > maxDate) maxDate = d;
-    });
-
     if (viewMode === "months") {
+      // For "Año hasta la fecha", show months from start of year to current month
+      if (preset === "ytd") {
+        const periodsArr: DateInfo[] = [];
+        const today = new Date();
+        const startOfYearDate = startOfYear(today);
+        let current = new Date(
+          startOfYearDate.getFullYear(),
+          startOfYearDate.getMonth(),
+          1,
+        );
+        const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+        while (current <= currentMonth) {
+          const key = getMonthKey(current);
+          periodsArr.push({
+            label: getMonthLabel(current),
+            year: current.getFullYear(),
+            month: current.getMonth() + 1,
+            key,
+          });
+          current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+        }
+        return periodsArr;
+      }
+
+      // For other month-based presets, use the selected date range
+      if (filteredTransactions.length === 0) {
+        // If no transactions, still show the range based on the selected period
+        const periodsArr: DateInfo[] = [];
+        let current = new Date(
+          range.from.getFullYear(),
+          range.from.getMonth(),
+          1,
+        );
+        const end = new Date(range.to.getFullYear(), range.to.getMonth(), 1);
+
+        while (current <= end) {
+          const key = getMonthKey(current);
+          periodsArr.push({
+            label: getMonthLabel(current),
+            year: current.getFullYear(),
+            month: current.getMonth() + 1,
+            key,
+          });
+          current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+        }
+        return periodsArr;
+      }
+
+      // Find min and max date from transactions
+      let minDate = new Date(filteredTransactions[0].date);
+      let maxDate = new Date(filteredTransactions[0].date);
+
+      filteredTransactions.forEach((tx) => {
+        const d = new Date(tx.date);
+        if (d < minDate) minDate = d;
+        if (d > maxDate) maxDate = d;
+      });
+
       // Generate all months between minDate and maxDate (inclusive)
       const periodsArr: DateInfo[] = [];
       let current = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
@@ -243,6 +290,7 @@ export default function AnalisisTable({
       }
       return periodsArr;
     }
+
     // For days view, show the last N days (where N is daysToShow)
     const periodsArr: DateInfo[] = [];
     const today = new Date();
@@ -262,7 +310,14 @@ export default function AnalisisTable({
       });
     }
     return periodsArr;
-  }, [filteredTransactions, viewMode, daysToShow]);
+  }, [
+    filteredTransactions,
+    viewMode,
+    daysToShow,
+    preset,
+    range.from,
+    range.to,
+  ]);
 
   // Build row data: one row per category, with data for each date period
   const data: RowData[] = React.useMemo(() => {
@@ -382,166 +437,173 @@ export default function AnalisisTable({
     enableSorting: true,
   });
 
-  if (categories.length === 0 || datePeriods.length === 0) {
-    return (
-      <div className="text-muted-foreground">No hay datos para mostrar.</div>
-    );
-  }
-
   return (
     <div>
       {dateSelector}
-      <div className="relative overflow-hidden">
-        <div
-          className="overflow-x-auto"
-          style={{
-            paddingRight: `${SUMMARY_COL_WIDTH * 3}px`,
-            marginRight: `-${SUMMARY_COL_WIDTH * 3}px`,
-          }}
-        >
-          <table className="w-full border-collapse bg-white">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    const sticky = (header.column.columnDef.meta as StickyMeta)
-                      ?.sticky;
-                    let style: React.CSSProperties = {
-                      minWidth: 120,
-                      maxWidth: 180,
-                    };
-                    if (sticky === "right") {
-                      // Calculate position for right-sticky columns (reverse order)
-                      const rightStickyHeaders = headerGroup.headers.filter(
-                        (h) =>
-                          (h.column.columnDef.meta as StickyMeta)?.sticky ===
-                          "right",
-                      );
-                      const rightIndex =
-                        rightStickyHeaders.length -
-                        1 -
-                        rightStickyHeaders.findIndex((h) => h.id === header.id);
-                      const rightOffset = rightIndex * SUMMARY_COL_WIDTH;
-
-                      style = {
-                        ...style,
-                        position: "sticky",
-                        right: `${rightOffset}px`,
-                        zIndex: 30,
-                        backgroundColor: "white",
-                        boxShadow: "-2px 0 4px -2px rgba(0,0,0,0.1)",
+      {categories.length === 0 ? (
+        <div className="text-muted-foreground">
+          No hay categorías para mostrar.
+        </div>
+      ) : datePeriods.length === 0 ? (
+        <div className="text-muted-foreground">
+          No hay datos para el período seleccionado.
+        </div>
+      ) : (
+        <div className="relative overflow-hidden">
+          <div
+            className="overflow-x-auto"
+            style={{
+              paddingRight: `${SUMMARY_COL_WIDTH * 3}px`,
+              marginRight: `-${SUMMARY_COL_WIDTH * 3}px`,
+            }}
+          >
+            <table className="w-full border-collapse bg-white">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      const sticky = (
+                        header.column.columnDef.meta as StickyMeta
+                      )?.sticky;
+                      let style: React.CSSProperties = {
+                        minWidth: 120,
+                        maxWidth: 180,
                       };
-                    } else if (sticky === "left") {
-                      style = {
-                        ...style,
-                        position: "sticky",
-                        left: 0,
-                        zIndex: 20,
-                        backgroundColor: "white",
-                        boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
-                      };
-                    }
-
-                    // Add left border to summary columns
-                    const isSummary =
-                      header.column.id === "total" ||
-                      header.column.id === "average" ||
-                      header.column.id === "count";
-
-                    return (
-                      <th
-                        key={header.id}
-                        onClick={header.column.getToggleSortingHandler()}
-                        className={`cursor-pointer select-none border px-2 py-1 text-left text-sm font-medium${isSummary ? " border-l-2 border-l-gray-300" : ""}`}
-                        style={style}
-                      >
-                        <div className="flex items-center gap-1">
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                          {header.column.getIsSorted() === "asc" && (
-                            <ChevronUp className="h-3 w-3" />
-                          )}
-                          {header.column.getIsSorted() === "desc" && (
-                            <ChevronDown className="h-3 w-3" />
-                          )}
-                        </div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id}>
-                  {row.getVisibleCells().map((cell) => {
-                    const sticky = (cell.column.columnDef.meta as StickyMeta)
-                      ?.sticky;
-                    let style: React.CSSProperties = {
-                      minWidth: 120,
-                      maxWidth: 180,
-                    };
-                    if (sticky === "right") {
-                      // Calculate position for right-sticky columns (reverse order)
-                      const rightStickyCells = row
-                        .getVisibleCells()
-                        .filter(
-                          (c) =>
-                            (c.column.columnDef.meta as StickyMeta)?.sticky ===
+                      if (sticky === "right") {
+                        // Calculate position for right-sticky columns (reverse order)
+                        const rightStickyHeaders = headerGroup.headers.filter(
+                          (h) =>
+                            (h.column.columnDef.meta as StickyMeta)?.sticky ===
                             "right",
                         );
-                      const rightIndex =
-                        rightStickyCells.length -
-                        1 -
-                        rightStickyCells.findIndex((c) => c.id === cell.id);
-                      const rightOffset = rightIndex * SUMMARY_COL_WIDTH;
+                        const rightIndex =
+                          rightStickyHeaders.length -
+                          1 -
+                          rightStickyHeaders.findIndex(
+                            (h) => h.id === header.id,
+                          );
+                        const rightOffset = rightIndex * SUMMARY_COL_WIDTH;
 
-                      style = {
-                        ...style,
-                        position: "sticky",
-                        right: `${rightOffset}px`,
-                        zIndex: 10,
-                        backgroundColor: "white",
-                        boxShadow: "-2px 0 4px -2px rgba(0,0,0,0.1)",
+                        style = {
+                          ...style,
+                          position: "sticky",
+                          right: `${rightOffset}px`,
+                          zIndex: 30,
+                          backgroundColor: "white",
+                          boxShadow: "-2px 0 4px -2px rgba(0,0,0,0.1)",
+                        };
+                      } else if (sticky === "left") {
+                        style = {
+                          ...style,
+                          position: "sticky",
+                          left: 0,
+                          zIndex: 20,
+                          backgroundColor: "white",
+                          boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
+                        };
+                      }
+
+                      // Add left border to summary columns
+                      const isSummary =
+                        header.column.id === "total" ||
+                        header.column.id === "average" ||
+                        header.column.id === "count";
+
+                      return (
+                        <th
+                          key={header.id}
+                          onClick={header.column.getToggleSortingHandler()}
+                          className={`cursor-pointer select-none border px-2 py-1 text-left text-sm font-medium${isSummary ? " border-l-2 border-l-gray-300" : ""}`}
+                          style={style}
+                        >
+                          <div className="flex items-center gap-1">
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                            {header.column.getIsSorted() === "asc" && (
+                              <ChevronUp className="h-3 w-3" />
+                            )}
+                            {header.column.getIsSorted() === "desc" && (
+                              <ChevronDown className="h-3 w-3" />
+                            )}
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id}>
+                    {row.getVisibleCells().map((cell) => {
+                      const sticky = (cell.column.columnDef.meta as StickyMeta)
+                        ?.sticky;
+                      let style: React.CSSProperties = {
+                        minWidth: 120,
+                        maxWidth: 180,
                       };
-                    } else if (sticky === "left") {
-                      style = {
-                        ...style,
-                        position: "sticky",
-                        left: 0,
-                        zIndex: 10,
-                        backgroundColor: "white",
-                        boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
-                      };
-                    }
+                      if (sticky === "right") {
+                        // Calculate position for right-sticky columns (reverse order)
+                        const rightStickyCells = row
+                          .getVisibleCells()
+                          .filter(
+                            (c) =>
+                              (c.column.columnDef.meta as StickyMeta)
+                                ?.sticky === "right",
+                          );
+                        const rightIndex =
+                          rightStickyCells.length -
+                          1 -
+                          rightStickyCells.findIndex((c) => c.id === cell.id);
+                        const rightOffset = rightIndex * SUMMARY_COL_WIDTH;
 
-                    // Add left border to summary columns
-                    const isSummary =
-                      cell.column.id === "total" ||
-                      cell.column.id === "average" ||
-                      cell.column.id === "count";
+                        style = {
+                          ...style,
+                          position: "sticky",
+                          right: `${rightOffset}px`,
+                          zIndex: 10,
+                          backgroundColor: "white",
+                          boxShadow: "-2px 0 4px -2px rgba(0,0,0,0.1)",
+                        };
+                      } else if (sticky === "left") {
+                        style = {
+                          ...style,
+                          position: "sticky",
+                          left: 0,
+                          zIndex: 10,
+                          backgroundColor: "white",
+                          boxShadow: "2px 0 4px -2px rgba(0,0,0,0.1)",
+                        };
+                      }
 
-                    return (
-                      <td
-                        key={cell.id}
-                        className={`border px-2 py-1 text-sm truncate${isSummary ? " border-l-2 border-l-gray-300" : ""}`}
-                        style={style}
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      // Add left border to summary columns
+                      const isSummary =
+                        cell.column.id === "total" ||
+                        cell.column.id === "average" ||
+                        cell.column.id === "count";
+
+                      return (
+                        <td
+                          key={cell.id}
+                          className={`border px-2 py-1 text-sm truncate${isSummary ? " border-l-2 border-l-gray-300" : ""}`}
+                          style={style}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

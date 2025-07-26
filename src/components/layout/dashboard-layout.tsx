@@ -214,7 +214,7 @@ export default function DashboardLayout({
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="w-full h-auto p-2 justify-start"
+                      className="h-auto justify-start w-full  p-2 "
                     >
                       <div className="flex items-center gap-3 w-full">
                         <Avatar className="h-8 w-8">

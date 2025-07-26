@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { differenceInDays } from "date-fns";
 import { client } from "@/lib/client";
 import { useAuthStore } from "@/store/store";
 
@@ -53,14 +54,13 @@ export function useSubscriptionTrial(): TrialStatus {
   if (data.trialEnd) {
     trialEndDate = new Date(data.trialEnd);
     const now = new Date();
-    const diffTime = trialEndDate.getTime() - now.getTime();
-    daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    daysRemaining = differenceInDays(trialEndDate, now);
   }
 
   return {
     isOnTrial: !!data.trialEnd,
     trialEndDate,
-    daysRemaining: Math.max(0, daysRemaining),
+    daysRemaining,
     hasActiveSubscription: data.hasActiveSubscription,
   };
 }
