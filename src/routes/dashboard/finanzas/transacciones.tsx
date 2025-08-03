@@ -36,7 +36,6 @@ import {
 import TransactionImportDialog from "@/features/dashboard/components/TransactionImportDialog";
 import { TransactionSheet } from "@/features/dashboard/components/TransactionSheet";
 import TransactionSummaryPanel from "@/features/dashboard/components/TransactionSummaryPanel";
-
 import { TransactionTableTanstack } from "@/features/dashboard/components/TransactionTableTanstack";
 
 export const Route = createFileRoute("/dashboard/finanzas/transacciones")({
@@ -279,6 +278,7 @@ function RouteComponent() {
               Lleva el control de tus transacciones financieras
             </p>
           </div>
+
           <div className="flex flex-col items-end gap-2">
             <Button onClick={handleCreateTransaction}>
               <Plus className="mr-2 h-4 w-4" />

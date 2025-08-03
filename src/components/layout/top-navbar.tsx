@@ -9,6 +9,7 @@ import {
   LogOut,
   PiggyBank,
   Receipt,
+  Repeat,
   Search,
   Settings,
   Target,
@@ -177,6 +178,13 @@ export default function TopNavBar() {
               <Receipt className="h-4 w-4" />
               <span>Transacciones</span>
             </Link>
+            <Link
+              to="/dashboard/finanzas/recurrentes"
+              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50"
+            >
+              <Repeat className="h-4 w-4" />
+              <span>Recurrentes</span>
+            </Link>
           </NavDropdown>
         </div>
       </div>
@@ -197,7 +205,7 @@ export default function TopNavBar() {
                     {user?.name?.[0] || user?.email?.[0] || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden min-w-0 flex-1 sm:block text-left">
+                <div className="hidden min-w-0 flex-1 text-left sm:block">
                   <p className="truncate font-medium text-sm">
                     {user?.name || "Usuario"}
                   </p>

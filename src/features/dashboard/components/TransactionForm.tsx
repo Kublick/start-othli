@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Account } from "@/features/dashboard/api/accounts";
 import type { Category } from "@/features/dashboard/api/categories";
 import type { Payee } from "@/features/dashboard/api/payees";
+// import type { RecurringTransaction } from "@/features/dashboard/api/recurringTransactions";
 import type { TransactionFormData } from "@/features/dashboard/api/transactions";
 
 const transactionSchema = z.object({
@@ -326,3 +327,37 @@ export function TransactionForm({
     </Form>
   );
 }
+
+// // Add this function to automatically link transactions with recurring items
+// const findMatchingRecurringTransaction = (
+//   payeeId: number | undefined,
+//   payees: Payee[],
+//   recurringTransactions: RecurringTransaction[],
+// ): string | undefined => {
+//   if (!payeeId) return undefined;
+
+//   const payee = payees.find((p) => p.id === payeeId);
+//   if (!payee) return undefined;
+
+//   // Find recurring transaction with matching payee
+//   const matchingRecurring = recurringTransactions.find(
+//     (rt) => rt.payeeId === payeeId && rt.isActive,
+//   );
+
+//   return matchingRecurring?.id;
+// };
+
+// // Update the onSubmit function to include recurringTransactionId
+// const onSubmit = (data: TransactionFormSchema) => {
+//   const recurringTransactionId = findMatchingRecurringTransaction(
+//     data.payeeId,
+//     payees,
+//     recurringTransactions || [],
+//   );
+
+//   const submitData: TransactionFormData = {
+//     ...data,
+//     currency: "MXN",
+//     recurringTransactionId, // Add this field
+//   };
+// };

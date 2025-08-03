@@ -25,6 +25,7 @@ import { Route as AuthResetRouteImport } from './routes/auth/reset'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotRouteImport } from './routes/auth/forgot'
 import { Route as DashboardFinanzasTransaccionesRouteImport } from './routes/dashboard/finanzas/transacciones'
+import { Route as DashboardFinanzasRecurrentesRouteImport } from './routes/dashboard/finanzas/recurrentes'
 import { Route as DashboardFinanzasPresupuestosRouteImport } from './routes/dashboard/finanzas/presupuestos'
 import { Route as DashboardFinanzasImportarRouteImport } from './routes/dashboard/finanzas/importar'
 import { ServerRoute as ApiSplatServerRouteImport } from './routes/api/$'
@@ -102,6 +103,12 @@ const DashboardFinanzasTransaccionesRoute =
     path: '/dashboard/finanzas/transacciones',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DashboardFinanzasRecurrentesRoute =
+  DashboardFinanzasRecurrentesRouteImport.update({
+    id: '/dashboard/finanzas/recurrentes',
+    path: '/dashboard/finanzas/recurrentes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DashboardFinanzasPresupuestosRoute =
   DashboardFinanzasPresupuestosRouteImport.update({
     id: '/dashboard/finanzas/presupuestos',
@@ -136,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminIndexRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
+  '/dashboard/finanzas/recurrentes': typeof DashboardFinanzasRecurrentesRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileRoutesByTo {
@@ -154,6 +162,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
+  '/dashboard/finanzas/recurrentes': typeof DashboardFinanzasRecurrentesRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileRoutesById {
@@ -173,6 +182,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/dashboard/finanzas/importar': typeof DashboardFinanzasImportarRoute
   '/dashboard/finanzas/presupuestos': typeof DashboardFinanzasPresupuestosRoute
+  '/dashboard/finanzas/recurrentes': typeof DashboardFinanzasRecurrentesRoute
   '/dashboard/finanzas/transacciones': typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileRouteTypes {
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
+    | '/dashboard/finanzas/recurrentes'
     | '/dashboard/finanzas/transacciones'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
+    | '/dashboard/finanzas/recurrentes'
     | '/dashboard/finanzas/transacciones'
   id:
     | '__root__'
@@ -229,6 +241,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/dashboard/finanzas/importar'
     | '/dashboard/finanzas/presupuestos'
+    | '/dashboard/finanzas/recurrentes'
     | '/dashboard/finanzas/transacciones'
   fileRoutesById: FileRoutesById
 }
@@ -248,6 +261,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   DashboardFinanzasImportarRoute: typeof DashboardFinanzasImportarRoute
   DashboardFinanzasPresupuestosRoute: typeof DashboardFinanzasPresupuestosRoute
+  DashboardFinanzasRecurrentesRoute: typeof DashboardFinanzasRecurrentesRoute
   DashboardFinanzasTransaccionesRoute: typeof DashboardFinanzasTransaccionesRoute
 }
 export interface FileServerRoutesByFullPath {
@@ -372,6 +386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardFinanzasTransaccionesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/finanzas/recurrentes': {
+      id: '/dashboard/finanzas/recurrentes'
+      path: '/dashboard/finanzas/recurrentes'
+      fullPath: '/dashboard/finanzas/recurrentes'
+      preLoaderRoute: typeof DashboardFinanzasRecurrentesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/finanzas/presupuestos': {
       id: '/dashboard/finanzas/presupuestos'
       path: '/dashboard/finanzas/presupuestos'
@@ -416,6 +437,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   DashboardFinanzasImportarRoute: DashboardFinanzasImportarRoute,
   DashboardFinanzasPresupuestosRoute: DashboardFinanzasPresupuestosRoute,
+  DashboardFinanzasRecurrentesRoute: DashboardFinanzasRecurrentesRoute,
   DashboardFinanzasTransaccionesRoute: DashboardFinanzasTransaccionesRoute,
 }
 export const routeTree = rootRouteImport

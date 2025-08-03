@@ -5,6 +5,7 @@ import { budgetsRouter } from "./routes/budgetsRouter";
 import { categoriesRouter } from "./routes/categoriesRouter";
 import financialAccountRouter from "./routes/financialAccountRouter";
 import payeesRouter from "./routes/payeesRouter";
+import recurringTransactionsRouter from "./routes/recurringTransactionsRouter";
 import { seedRouter } from "./routes/seed";
 import { setupRouter } from "./routes/setupRouter";
 import { subscriptionRouter } from "./routes/subscriptionRouter";
@@ -38,6 +39,7 @@ const routes = app
   .route("/financial-accounts", financialAccountRouter)
   .route("/setup", setupRouter)
   .route("/transactions", transactionsRouter)
+  .route("/recurring-transactions", recurringTransactionsRouter)
   .route("/payees", payeesRouter)
   .route("/summary", summaryRouter)
   .route("/subscription", subscriptionRouter);

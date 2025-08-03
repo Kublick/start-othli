@@ -10,12 +10,12 @@ export interface Account {
   currency: string;
   isActive: boolean;
   userId: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
   subtypeName: string | null;
   displayName: string | null;
-  balanceAsOf: string;
-  closedOn: string | null;
+  balanceAsOf: string | Date;
+  closedOn: string | Date | null;
   institutionName: string | null;
   excludeTransactions: boolean;
 }

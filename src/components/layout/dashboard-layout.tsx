@@ -8,6 +8,7 @@ import {
   LogOut,
   PiggyBank,
   Receipt,
+  Repeat,
   Search,
   Settings,
   Target,
@@ -202,6 +203,14 @@ export default function DashboardLayout({
                             </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton asChild>
+                            <Link to="/dashboard/finanzas/recurrentes">
+                              <Repeat className="h-4 w-4" />
+                              <span>Recurrentes</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
                       </SidebarMenuSub>
                     </SidebarMenuItem>
                   </SidebarMenu>
@@ -214,9 +223,9 @@ export default function DashboardLayout({
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="h-auto justify-start w-full  p-2 "
+                      className="h-auto w-full justify-start p-2 "
                     >
-                      <div className="flex items-center gap-3 w-full">
+                      <div className="flex w-full items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarImage
                             src={user?.image || "/avatar_image.png"}

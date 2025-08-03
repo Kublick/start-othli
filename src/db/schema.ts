@@ -253,7 +253,6 @@ export const recurringTransaction = pgTable("recurring_transaction", {
   id: text("id").primaryKey(),
   description: varchar("description", { length: 200 }).notNull(),
   amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
-  type: transactionTypeEnum("type").notNull(),
   currency: varchar("currency", { length: 3 }).notNull().default("MXN"),
   frequency: varchar("frequency", { length: 20 }).notNull(),
   startDate: timestamp("start_date").notNull(),

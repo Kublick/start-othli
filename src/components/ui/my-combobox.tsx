@@ -120,56 +120,57 @@ export const MyCombobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button
-            ref={ref}
-            variant="outline"
-            aria-expanded={open}
-            className={cn(
-              "w-full justify-between font-normal",
-              error ? "border-destructive" : "",
-              !selectedValue && "text-muted-foreground",
-              className,
-            )}
-            disabled={disabled}
-            onClick={() => setOpen(!open)}
-            type="button"
-          >
-            <span className="truncate">
-              {selectedValue
-                ? selectedOption
-                  ? selectedOption.label
-                  : selectedValue
-                : placeholder}
-            </span>
-            <div className="flex items-center">
-              {clearable && !disableClear && selectedValue && (
-                <button
-                  type="button"
-                  tabIndex={0}
-                  className="mr-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded p-0 hover:bg-transparent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
-                  onClick={(e) => {
+          <div className="relative">
+            <Button
+              ref={ref}
+              variant="outline"
+              aria-expanded={open}
+              className={cn(
+                "w-full justify-between font-normal",
+                error ? "border-destructive" : "",
+                !selectedValue && "text-muted-foreground",
+                clearable && !disableClear && selectedValue && "pr-12",
+                className,
+              )}
+              disabled={disabled}
+              onClick={() => setOpen(!open)}
+              type="button"
+            >
+              <span className="truncate">
+                {selectedValue
+                  ? selectedOption
+                    ? selectedOption.label
+                    : selectedValue
+                  : placeholder}
+              </span>
+              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+            {clearable && !disableClear && selectedValue && (
+              <button
+                type="button"
+                tabIndex={0}
+                className="-translate-y-1/2 absolute top-1/2 right-8 flex h-4 w-4 cursor-pointer items-center justify-center rounded p-0 hover:bg-transparent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClear();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
                     e.stopPropagation();
                     handleClear();
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleClear();
-                    }
-                  }}
-                  aria-label="Clear selection"
-                  style={{
-                    pointerEvents: disabled ? "none" : "auto",
-                    opacity: disabled ? 0.5 : 1,
-                  }}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-            </div>
-          </Button>
+                  }
+                }}
+                aria-label="Clear selection"
+                style={{
+                  pointerEvents: disabled ? "none" : "auto",
+                  opacity: disabled ? 0.5 : 1,
+                }}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </div>
         </PopoverTrigger>
         <PopoverContent
           className="w-[var(--radix-popover-trigger-width)] p-0"

@@ -1,16 +1,7 @@
-import { ChevronLeft, ChevronRight, TriangleAlert } from "lucide-react";
-import React from "react"; // Added missing import for React
-
-// Helper function to format currency
-export const formatCurrency = (amount: string | number, currency = "MXN") => {
-  const numAmount =
-    typeof amount === "string" ? Number.parseFloat(amount) : amount;
-  if (Number.isNaN(numAmount)) return `${currency}$0.00`;
-  return `${currency}$${numAmount.toLocaleString("es-MX", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-};
+import { ChevronLeft, ChevronRight, Repeat } from "lucide-react";
+import * as React from "react";
+import type { RecurringTransaction } from "@/features/dashboard/api/recurringTransactions";
+import { formatCurrency } from "@/lib/utils";
 
 interface TransactionSummaryPanelProps {
   transactions: { categoryId?: number | null; amount: string }[];
@@ -19,6 +10,7 @@ interface TransactionSummaryPanelProps {
   budgets?: Record<number, number>; // categoryId -> plannedAmount
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
+  recurringTransactions?: RecurringTransaction[];
 }
 
 function TransactionSummaryPanel({
@@ -28,6 +20,7 @@ function TransactionSummaryPanel({
   budgets = {},
   collapsed,
   setCollapsed,
+  recurringTransactions = [],
 }: TransactionSummaryPanelProps) {
   // Aggregate totals by categoryId
   const categoryTotals: Record<number, number> = {};
@@ -124,6 +117,28 @@ function TransactionSummaryPanel({
   );
   const netIncome = incomeTotal - expensesTotal;
 
+  // Calculate recurring transactions for current month
+  const currentMonthRecurring = recurringTransactions.filter((rt) => {
+    if (!rt.isActive) return false;
+    const startDate = new Date(rt.startDate);
+    const endDate = rt.endDate ? new Date(rt.endDate) : null;
+    const now = new Date();
+
+    // Check if recurring transaction is active for current month
+    if (startDate > now) return false;
+    if (endDate && endDate < now) return false;
+
+    return true;
+  });
+
+  const recurringIncomeTotal = currentMonthRecurring
+    .filter((rt) => rt.type === "income")
+    .reduce((sum, rt) => sum + Number(rt.amount), 0);
+
+  const recurringExpenseTotal = currentMonthRecurring
+    .filter((rt) => rt.type === "expense")
+    .reduce((sum, rt) => sum + Number(rt.amount), 0);
+
   if (collapsed) {
     return (
       <div className="flex h-full flex-col items-end">
@@ -154,71 +169,118 @@ function TransactionSummaryPanel({
         </button>
       </div>
       <div className="mb-2 border-b" />
+
+      {/* Recurring Transactions Section */}
+      {currentMonthRecurring.length > 0 && (
+        <>
+          <div className="mb-1 flex items-center gap-1 font-bold text-muted-foreground text-xs">
+            <Repeat className="h-3 w-3" />
+            RECURRING ITEMS
+          </div>
+          {currentMonthRecurring.map((rt) => (
+            <div key={rt.id} className="flex justify-between text-sm">
+              <span className="truncate">{rt.description}</span>
+              <span
+                className={`font-mono ${rt.type === "income" ? "text-green-600" : "text-red-600"}`}
+              >
+                {formatCurrency(Number(rt.amount))}
+              </span>
+            </div>
+          ))}
+          <div className="mb-2 border-b" />
+        </>
+      )}
+
       {/* Income */}
       <div className="mb-1 font-bold text-muted-foreground text-xs">
         INGRESOS
       </div>
-      <div className="mb-2 flex flex-col gap-1">
-        {incomeCategories.length > 0 ? (
-          incomeCategories.map(renderCategoryRow)
-        ) : (
-          <div className="py-2 text-muted-foreground text-sm">
-            No hay ingresos categorizados
-          </div>
-        )}
-      </div>
+      {incomeCategories.map((cat) => {
+        const total = categoryTotals[cat.id] || 0;
+        const budget = budgets[cat.id];
+        const percent = budget ? (Math.abs(total) / budget) * 100 : null;
+        const progressColor =
+          percent && percent >= 100 ? "bg-green-500" : "bg-green-300";
+
+        return renderCategoryRow(
+          cat,
+          total,
+          budget,
+          percent,
+          progressColor,
+          true,
+        );
+      })}
+
       {/* Expenses */}
-      <div className="mb-1 font-bold text-muted-foreground text-xs">GASTOS</div>
-      <div className="mb-2 flex flex-col gap-1">
-        {expenseCategories.length > 0 ? (
-          expenseCategories.map(renderCategoryRow)
-        ) : (
-          <div className="py-2 text-muted-foreground text-sm">
-            No hay gastos categorizados
-          </div>
-        )}
+      <div className="mb-1 mt-4 font-bold text-muted-foreground text-xs">
+        GASTOS
       </div>
+      {expenseCategories.map((cat) => {
+        const total = categoryTotals[cat.id] || 0;
+        const budget = budgets[cat.id];
+        const percent = budget ? (Math.abs(total) / budget) * 100 : null;
+        const progressColor =
+          percent && percent >= 100 ? "bg-red-500" : "bg-red-300";
+
+        return renderCategoryRow(
+          cat,
+          total,
+          budget,
+          percent,
+          progressColor,
+          false,
+        );
+      })}
+
       {/* Uncategorized */}
       {uncategorizedTotal > 0 && (
-        <>
-          <div className="mb-1 flex items-center gap-2 font-bold text-muted-foreground text-xs">
-            <TriangleAlert className="text-amber-500" size={16} />
-            SIN CATEGORÍA
-          </div>
-          <div className="mb-2 flex flex-col gap-1">
-            <div className="mb-2">
-              <div className="flex items-center gap-2">
-                <span className="min-w-[80px] flex-1 truncate font-medium text-primary text-sm">
-                  Sin categoría
-                </span>
-                <span className="min-w-[80px] text-right font-mono text-sm">
-                  {formatCurrency(uncategorizedTotal)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </>
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">Sin categoría</span>
+          <span className="font-mono text-muted-foreground">
+            {formatCurrency(uncategorizedTotal)}
+          </span>
+        </div>
       )}
-      <div className="my-2 border-t border-dashed" />
-      <div className="flex justify-between font-semibold text-sm">
-        <span>Total Ingresos</span>
-        <span className="font-mono text-green-600">
-          {formatCurrency(incomeTotal)}
-        </span>
-      </div>
-      <div className="flex justify-between font-semibold text-sm">
-        <span>Total Gastos</span>
-        <span className="font-mono text-red-600">
-          {formatCurrency(expensesTotal)}
-        </span>
-      </div>
-      <div className="flex justify-between font-semibold text-sm">
-        <span>Saldo Neto</span>
-        <span
-          className={`font-mono ${netIncome >= 0 ? "text-green-600" : "text-red-600"}`}
-        >
-          {formatCurrency(Math.abs(netIncome))}
-        </span>
+
+      {/* Totals */}
+      <div className="mt-4 space-y-1 border-t pt-2">
+        <div className="flex justify-between font-semibold text-sm">
+          <span>Total Ingresos</span>
+          <span className="font-mono text-green-600">
+            {formatCurrency(incomeTotal)}
+          </span>
+        </div>
+        <div className="flex justify-between font-semibold text-sm">
+          <span>Total Gastos</span>
+          <span className="font-mono text-red-600">
+            {formatCurrency(expensesTotal)}
+          </span>
+        </div>
+        {(recurringIncomeTotal > 0 || recurringExpenseTotal > 0) && (
+          <>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Recurring Income</span>
+              <span className="font-mono text-green-500">
+                {formatCurrency(recurringIncomeTotal)}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Recurring Expenses</span>
+              <span className="font-mono text-red-500">
+                {formatCurrency(recurringExpenseTotal)}
+              </span>
+            </div>
+          </>
+        )}
+        <div className="flex justify-between font-semibold text-sm">
+          <span>Saldo Neto</span>
+          <span
+            className={`font-mono ${netIncome >= 0 ? "text-green-600" : "text-red-600"}`}
+          >
+            {formatCurrency(Math.abs(netIncome))}
+          </span>
+        </div>
       </div>
     </div>
   );
