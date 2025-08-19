@@ -17,14 +17,11 @@ dotenv.config();
 
 
 const resend = new Resend(
-  process.env.RESEND_API_KEY,
+  env.RESEND_API_KEY,
 );
 
 const stripeClient = new Stripe(
-  process.env.STRIPE_API_KEY ?? "",
-  {
-    apiVersion: "2025-06-30.basil",
-  },
+  env.STRIPE_SECRET_KEY ?? ""
 );
 
 export const auth = betterAuth({

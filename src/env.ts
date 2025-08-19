@@ -10,7 +10,6 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: z.string(),
     GOOGLE_CLIENT_SECRET: z.string(),
     STRIPE_SECRET_KEY: z.string(),
-    STRIPE_PUBLISHABLE_KEY: z.string(),
     STRIPE_WEBHOOK_SECRET: z.string(),
   },
   runtimeEnv: process.env,
@@ -21,6 +20,7 @@ export const clientEnv = createEnv({
   clientPrefix: "VITE_",
   client: {
     VITE_BETTER_AUTH_URL: z.string().url(),
+    VITE_STRIPE_PUBLISHABLE_KEY: z.string(),
   },
   runtimeEnv: import.meta.env,
   emptyStringAsUndefined: true,
